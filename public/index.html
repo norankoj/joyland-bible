@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>조이랜드 통독</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; }
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: linear-gradient(160deg, #6B3FD8 0%, #9F75FF 55%, #FFD580 100%);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px 20px;
+    }
+    .card {
+      background: white; border-radius: 32px;
+      padding: 36px 28px; width: 100%; max-width: 340px;
+      box-shadow: 0 24px 64px rgba(107,63,216,0.28);
+    }
+    .emoji { font-size: 60px; text-align: center; margin-bottom: 12px; }
+    .title { font-size: 24px; font-weight: 900; text-align: center; color: var(--text); }
+    .sub { font-size: 13px; color: var(--sub); text-align: center; margin: 6px 0 28px; }
+    .pin-input {
+      width: 100%; padding: 17px 16px;
+      border: 2.5px solid var(--bdr); border-radius: 18px;
+      font-size: 26px; text-align: center; letter-spacing: 10px;
+      color: var(--p); font-weight: 700; outline: none; background: var(--pl);
+      -webkit-text-security: disc; text-security: disc;
+      margin-bottom: 10px;
+    }
+    .pin-input:focus { border-color: var(--p); }
+    .pin-hint { font-size: 11px; color: var(--sub); text-align: center; line-height: 1.7; margin-bottom: 22px; }
+    .btn {
+      width: 100%; padding: 16px; border-radius: 18px; border: none;
+      background: linear-gradient(135deg, #7B4FE8, #9F75FF);
+      color: white; font-size: 16px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(123,79,232,0.38);
+      transition: transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .error { background: #FEE2E2; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #991B1B; text-align: center; margin-bottom: 14px; display: none; }
+    .loading { display: none; text-align: center; color: var(--sub); font-size: 14px; margin-bottom: 14px; }
+    .admin-link { display: block; text-align: center; margin-top: 20px; font-size: 12px; color: rgba(255,255,255,0.6); text-decoration: none; }
+    .admin-link:hover { color: white; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">📖</div>
+    <div class="title">조이랜드 통독</div>
+    <div class="sub">매주 함께 읽는 성경 🌟</div>
+
+    <div class="error" id="error"></div>
+    <div class="loading" id="loading">확인 중...</div>
+
+    <input class="pin-input" id="pinInput" type="tel" inputmode="numeric" maxlength="8" placeholder="••••••••" autocomplete="off"/>
+    <div class="pin-hint">보호자 전화번호 뒤 4자리<br>+ 자녀 생일 4자리 (예: 5678·0305)</div>
+
+    <button class="btn" id="loginBtn" onclick="login()">로그인</button>
+  </div>
+
+  <a class="admin-link" href="admin.html">관리자 페이지 →</a>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+    document.getElementById('pinInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+
+    async function login() {
+      const pin = document.getElementById('pinInput').value.trim();
+      const errEl = document.getElementById('error');
+      const loadEl = document.getElementById('loading');
+      const btn = document.getElementById('loginBtn');
+
+      errEl.style.display = 'none';
+      if (pin.length !== 8) { showError('PIN 8자리를 입력해주세요.'); return; }
+
+      btn.disabled = true;
+      loadEl.style.display = 'block';
+
+      try {
+        const { data, error } = await sb
+          .from('students')
+          .select('id, name')
+          .eq('pin', pin)
+          .eq('active', true)
+          .limit(1)
+          .single();
+
+        if (error || !data) {
+          showError('PIN이 일치하는 학생을 찾을 수 없습니다.\n입력 정보를 다시 확인해주세요.');
+          return;
+        }
+
+        localStorage.setItem('studentId', data.id);
+        localStorage.setItem('studentName', data.name);
+        window.location.href = 'home.html';
+
+      } catch (e) {
+        showError('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        console.error(e);
+      } finally {
+        btn.disabled = false;
+        loadEl.style.display = 'none';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

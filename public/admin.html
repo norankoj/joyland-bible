@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>조이랜드 통독 - 관리자</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --gold:#FFB800; --amber:#FF8C42; --green:#2DC38C; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; --bg:#F8F6FF; }
+    body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background: var(--bg); color: var(--text); }
+
+    /* 로그인 */
+    .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#120B38 0%,#3B1D8A 60%,#7B4FE8 100%); padding:24px; }
+    .login-card { background:white; border-radius:28px; padding:36px 28px; width:100%; max-width:340px; box-shadow:0 24px 64px rgba(0,0,0,0.35); }
+    .login-card .em { font-size:48px; text-align:center; margin-bottom:12px; }
+    .login-card .ti { font-size:20px; font-weight:900; text-align:center; margin-bottom:4px; }
+    .login-card .su { font-size:12px; color:var(--sub); text-align:center; margin-bottom:28px; }
+
+    /* 레이아웃 */
+    .admin-wrap { display:flex; min-height:100vh; }
+    .sidebar { width:210px; background:#120B38; display:flex; flex-direction:column; flex-shrink:0; }
+    .sb-logo { padding:22px 22px 18px; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .sb-logo .t1 { font-size:16px; font-weight:900; color:white; }
+    .sb-logo .t2 { font-size:11px; color:rgba(255,255,255,0.35); margin-top:3px; }
+    .sb-i { display:flex; align-items:center; gap:10px; padding:13px 22px; color:rgba(255,255,255,0.45); font-size:13px; cursor:pointer; border-left:3px solid transparent; transition:all 0.15s; }
+    .sb-i:hover { color:rgba(255,255,255,0.75); background:rgba(255,255,255,0.04); }
+    .sb-i.on { color:white; background:rgba(123,79,232,0.2); border-left-color:#9F75FF; font-weight:700; }
+    .sb-i .ic { font-size:16px; }
+    .sb-bottom { margin-top:auto; }
+    .main { flex:1; padding:28px; overflow-y:auto; }
+    .pg-t { font-size:22px; font-weight:900; margin-bottom:4px; }
+    .pg-s { font-size:13px; color:var(--sub); margin-bottom:24px; }
+
+    /* 통계 */
+    .stat-row { display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+    .stat-card { flex:1; min-width:90px; background:white; border-radius:18px; padding:18px 16px; box-shadow:0 2px 14px rgba(0,0,0,0.06); }
+    .st-n { font-size:30px; font-weight:900; line-height:1; }
+    .st-l { font-size:11px; color:var(--sub); margin-top:5px; }
+
+    /* 학생 그리드 */
+    .legend { font-size:11px; color:var(--sub); background:white; border-radius:12px; padding:10px 14px; margin-bottom:14px; display:flex; gap:14px; flex-wrap:wrap; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+    .s-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
+    .s-card { background:white; border-radius:18px; padding:16px 14px; box-shadow:0 2px 14px rgba(0,0,0,0.06); text-align:center; transition:transform 0.15s; }
+    .s-card:hover { transform:translateY(-2px); }
+    .sc-em { font-size:38px; margin-bottom:8px; }
+    .sc-nm { font-size:13px; font-weight:800; }
+    .sc-gr { font-size:11px; color:var(--sub); margin-top:2px; }
+    .sc-pc { font-size:13px; font-weight:800; margin-top:8px; color:var(--p); }
+    .sc-pb { background:var(--pl); height:6px; border-radius:99px; margin-top:7px; overflow:hidden; }
+    .sc-pf { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--p),#B088FF); }
+
+    /* 테이블 */
+    .tbl-wrap { overflow-x:auto; border-radius:18px; box-shadow:0 2px 14px rgba(0,0,0,0.06); }
+    .tbl { width:100%; border-collapse:collapse; background:white; font-size:12px; white-space:nowrap; }
+    .tbl th { background:#F8F6FF; padding:10px; font-size:11px; color:var(--sub); border-bottom:2px solid var(--bdr); text-align:center; }
+    .tbl th:first-child { text-align:left; padding-left:16px; }
+    .tbl td { padding:10px; border-bottom:1px solid #F8F6FF; text-align:center; }
+    .tbl td:first-child { text-align:left; font-weight:700; padding-left:16px; }
+    .tbl tr:last-child td { border-bottom:none; }
+
+    /* 등록 */
+    .two-col { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+    .reg-box { flex:1; min-width:260px; background:white; border-radius:22px; padding:24px; box-shadow:0 2px 14px rgba(0,0,0,0.06); }
+    .rb-t { font-size:15px; font-weight:800; margin-bottom:18px; }
+    .up-zone { border:2.5px dashed #C5BEE0; border-radius:18px; padding:32px; text-align:center; background:#F8F6FF; margin-bottom:16px; cursor:pointer; transition:all 0.2s; }
+    .up-zone:hover { border-color:var(--p); background:var(--pl); }
+    .up-zone .ue { font-size:40px; margin-bottom:8px; }
+    .up-zone .ut { font-size:14px; font-weight:700; color:var(--p); }
+    .up-zone .us { font-size:11px; color:var(--sub); margin-top:4px; }
+    .col-hint { background:var(--pl); border-radius:12px; padding:12px 14px; font-size:12px; color:var(--pd); line-height:1.9; margin-bottom:16px; }
+    .fl { display:flex; flex-direction:column; gap:12px; }
+    .fg { }
+    .fl-lbl { font-size:11px; font-weight:700; color:var(--sub); margin-bottom:6px; }
+    .fld { width:100%; padding:12px 14px; border:2px solid var(--bdr); border-radius:14px; font-size:14px; outline:none; background:white; font-family:inherit; }
+    .fld:focus { border-color:var(--p); background:var(--pl); }
+    .fld-row { display:flex; gap:10px; }
+    .fld-row > div { flex:1; }
+    .pin-pre { background:var(--pl); border-radius:12px; padding:10px 14px; font-size:12px; color:var(--pd); }
+
+    /* 시상 */
+    .aw-info { background:linear-gradient(135deg,#FFF8E1,#FFF0C2); border-radius:16px; padding:16px 20px; margin-bottom:22px; font-size:13px; color:#92400E; line-height:1.9; }
+    .aw-sec { font-size:14px; font-weight:800; margin-bottom:12px; }
+    .aw-card { background:white; border-radius:18px; padding:18px 20px; margin-bottom:12px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 14px rgba(0,0,0,0.06); }
+    .aw-em { font-size:42px; }
+    .aw-inf { flex:1; }
+    .aw-nm { font-size:15px; font-weight:800; }
+    .aw-dt { font-size:12px; color:var(--sub); margin-top:3px; }
+    .aw-bd { padding:6px 14px; border-radius:99px; font-size:12px; font-weight:800; }
+    .bd-g { background:#FFF3CC; color:#A07000; }
+    .bd-gr { background:#E6FBF3; color:#087C4A; }
+
+    /* 학기 설정 */
+    .set-box { background:white; border-radius:22px; padding:24px; box-shadow:0 2px 14px rgba(0,0,0,0.06); margin-bottom:16px; max-width:480px; }
+    .sb-t { font-size:15px; font-weight:800; margin-bottom:18px; }
+
+    /* 버튼 */
+    .btn { padding:13px 20px; border-radius:14px; border:none; font-size:14px; font-weight:700; cursor:pointer; transition:transform 0.1s; font-family:inherit; }
+    .btn:active { transform:scale(0.97); }
+    .btn-p { background:linear-gradient(135deg,var(--p),#9F75FF); color:white; }
+    .btn-g { background:linear-gradient(135deg,#2DC38C,#34D399); color:white; }
+    .btn-full { width:100%; padding:14px; }
+    .btn-sm { padding:9px 16px; font-size:13px; border-radius:10px; }
+    .btn-danger { background:#FEE2E2; color:#991B1B; border:none; }
+
+    /* 메시지 */
+    .msg { border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:14px; display:none; }
+    .msg.err { background:#FEE2E2; color:#991B1B; }
+    .msg.ok { background:#D1FAE5; color:#065F46; }
+
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1E1248; color:white; padding:12px 24px; border-radius:99px; font-size:14px; font-weight:700; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; z-index:999; }
+    .toast.show { opacity:1; }
+    .ld-ov { position:fixed; inset:0; background:rgba(248,246,255,0.85); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .ld-ov.show { display:flex; }
+    .spinner { width:36px; height:36px; border:3px solid var(--pl); border-top-color:var(--p); border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media (max-width:640px) { .sidebar { display:none; } .main { padding:16px; } }
+  </style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="em">🔑</div>
+    <div class="ti">관리자 로그인</div>
+    <div class="su">Supabase 이메일/비밀번호로 로그인하세요</div>
+    <div class="msg err" id="loginErr"></div>
+    <div class="fg" style="margin-bottom:12px">
+      <div class="fl-lbl">이메일</div>
+      <input class="fld" type="email" id="loginEmail" placeholder="admin@example.com"/>
+    </div>
+    <div class="fg" style="margin-bottom:20px">
+      <div class="fl-lbl">비밀번호</div>
+      <input class="fld" type="password" id="loginPw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="btn btn-p btn-full" onclick="doLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- 관리자 패널 -->
+<div class="admin-wrap" id="adminWrap" style="display:none">
+  <div class="sidebar">
+    <div class="sb-logo"><div class="t1">조이랜드</div><div class="t2">통독 관리자</div></div>
+    <div class="sb-i on"  id="mn-dash"     onclick="showTab('dash')">    <span class="ic">📊</span> 전체 현황</div>
+    <div class="sb-i"     id="mn-check"    onclick="showTab('check')">   <span class="ic">📋</span> 주차별 체크</div>
+    <div class="sb-i"     id="mn-students" onclick="showTab('students')"><span class="ic">👶</span> 학생 관리</div>
+    <div class="sb-i"     id="mn-award"    onclick="showTab('award')">   <span class="ic">🏆</span> 시상 계산</div>
+    <div class="sb-i"     id="mn-settings" onclick="showTab('settings')"><span class="ic">⚙️</span> 학기 설정</div>
+    <div class="sb-bottom">
+      <div class="sb-i" onclick="doLogout()"><span class="ic">🚪</span> 로그아웃</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- 전체 현황 -->
+    <div id="tab-dash">
+      <div class="pg-t">전체 통독 현황</div>
+      <div class="pg-s" id="dashSub"></div>
+      <div class="stat-row" id="statRow"></div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:8px">학생 현황 <span style="font-weight:400;font-size:12px;color:var(--sub)">완료율 기준</span></div>
+      <div class="legend"><span>🥚 0%</span><span>🐣 ~40%</span><span>🐥 ~70%</span><span>🐔 ~99%</span><span>🐓 100% 완주</span></div>
+      <div class="s-grid" id="studentGrid"></div>
+    </div>
+
+    <!-- 주차별 체크 -->
+    <div id="tab-check" style="display:none">
+      <div class="pg-t">주차별 체크 현황</div>
+      <div class="pg-s" id="checkSub"></div>
+      <div class="tbl-wrap"><table class="tbl" id="checkTable"><thead id="checkThead"></thead><tbody id="checkTbody"></tbody></table></div>
+    </div>
+
+    <!-- 학생 관리 -->
+    <div id="tab-students" style="display:none">
+      <div class="pg-t">학생 등록 / 관리</div>
+      <div class="pg-s">엑셀 일괄 등록 또는 개별 추가</div>
+      <div class="two-col">
+        <div class="reg-box">
+          <div class="rb-t">📁 엑셀 일괄 등록</div>
+          <div class="up-zone" onclick="document.getElementById('xlsxInput').click()">
+            <div class="ue">📊</div><div class="ut">파일을 클릭하여 선택</div><div class="us">.xlsx / .csv 지원</div>
+          </div>
+          <input type="file" id="xlsxInput" accept=".xlsx,.csv" style="display:none" onchange="handleExcel(this)"/>
+          <div class="col-hint"><b>📋 컬럼 순서 (1행: 헤더)</b><br>A: 이름 · B: 학년<br>C: 성별 · D: 보호자 전화번호<br>E: 생일 4자리 (MMDD)</div>
+          <div class="msg err" id="xlsxErr"></div>
+          <div class="msg ok"  id="xlsxOk"></div>
+          <div id="xlsxPreview" style="display:none;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px" id="xlsxPreviewLabel"></div>
+            <div class="tbl-wrap" style="max-height:200px;overflow-y:auto"><table class="tbl" id="xlsxPreviewTable"></table></div>
+          </div>
+          <button class="btn btn-p btn-full" id="xlsxBtn" style="display:none" onclick="uploadExcel()">업로드 실행</button>
+        </div>
+        <div class="reg-box">
+          <div class="rb-t">➕ 개별 등록</div>
+          <div class="msg err" id="regErr"></div>
+          <div class="msg ok"  id="regOk"></div>
+          <div class="fl">
+            <div><div class="fl-lbl">이름</div><input class="fld" id="regName" placeholder="홍길동"/></div>
+            <div class="fld-row">
+              <div><div class="fl-lbl">학년</div>
+                <select class="fld" id="regGrade"><option>1학년</option><option>2학년</option><option>3학년</option><option>4학년</option><option>5학년</option><option>6학년</option></select>
+              </div>
+              <div><div class="fl-lbl">성별</div><select class="fld" id="regGender"><option>남</option><option>여</option></select></div>
+            </div>
+            <div><div class="fl-lbl">보호자 전화번호</div><input class="fld" id="regPhone" type="tel" placeholder="010-0000-0000" oninput="updatePin()"/></div>
+            <div><div class="fl-lbl">생일 4자리 (MMDD)</div>
+              <input class="fld" id="regBday" type="tel" inputmode="numeric" maxlength="4" placeholder="0305" style="letter-spacing:6px;font-size:18px;font-weight:800;color:var(--p)" oninput="updatePin()"/>
+            </div>
+            <div class="pin-pre" id="pinPre">🔐 생성될 PIN: <b>- - - -</b></div>
+            <button class="btn btn-p btn-full" onclick="registerStudent()">등록하기</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:15px;font-weight:800;margin-bottom:12px">등록된 학생 목록</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th style="text-align:left;padding-left:16px">이름</th><th>학년</th><th>성별</th><th>PIN</th><th>상태</th><th>관리</th></tr></thead>
+            <tbody id="studentListBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 시상 계산 -->
+    <div id="tab-award" style="display:none">
+      <div class="pg-t">시상자 자동 계산</div>
+      <div class="pg-s" id="awardSub"></div>
+      <div class="aw-info">🏆 <b>성실상</b>: 전체 주차 완료<br>🌱 <b>노력상</b>: 딱 1회만 부분완료, 나머지 모두 완료</div>
+      <div id="awardResult"></div>
+      <button class="btn btn-g btn-full" style="margin-top:8px" onclick="exportAwards()">📋 시상 명단 엑셀 내보내기</button>
+    </div>
+
+    <!-- 학기 설정 -->
+    <div id="tab-settings" style="display:none">
+      <div class="pg-t">학기 설정</div>
+      <div class="pg-s">진행 중인 학기를 관리합니다</div>
+      <div class="set-box" id="curSemBox">
+        <div class="sb-t">📅 현재 학기</div>
+        <div id="curSemInfo" style="font-size:14px;color:var(--sub);margin-bottom:16px">불러오는 중...</div>
+        <button class="btn btn-danger btn-sm" onclick="endSemester()">학기 종료</button>
+      </div>
+      <div class="set-box">
+        <div class="sb-t">➕ 새 학기 시작</div>
+        <div class="msg err" id="semErr"></div>
+        <div class="msg ok"  id="semOk"></div>
+        <div class="fl">
+          <div class="fld-row">
+            <div><div class="fl-lbl">연도</div><input class="fld" id="semYear" type="number" placeholder="2025"/></div>
+            <div><div class="fl-lbl">학기</div><select class="fld" id="semNum"><option value="1">1학기</option><option value="2">2학기</option></select></div>
+          </div>
+          <div><div class="fl-lbl">총 주차 수</div><input class="fld" id="semWeeks" type="number" placeholder="15"/></div>
+          <div><div class="fl-lbl">첫 번째 체크일 (화요일)</div><input class="fld" id="semFirstCheck" type="date"/></div>
+          <button class="btn btn-p btn-full" onclick="createSemester()">학기 시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ld-ov" id="ldOv"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="js/config.js"></script>
+<script>
+  let semester = null, students = [], records = {}, xlsxRows = [];
+
+  // ── 인증 ──
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('adminWrap').style.display = 'flex';
+      await loadAll();
+    } else {
+      document.getElementById('loginWrap').style.display = 'flex';
+      document.getElementById('adminWrap').style.display = 'none';
+    }
+  });
+
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw = document.getElementById('loginPw').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.style.display = 'none';
+    if (!email || !pw) { showMsg(errEl, '이메일과 비밀번호를 입력하세요.'); return; }
+    loading(true);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    loading(false);
+    if (error) showMsg(errEl, '로그인 실패: 이메일 또는 비밀번호를 확인해주세요.');
+  }
+
+  function doLogout() { sb.auth.signOut(); }
+
+  // ── 데이터 로드 ──
+  async function loadAll() {
+    loading(true);
+    try {
+      const [semRes, stRes] = await Promise.all([
+        sb.from('semesters').select('*').eq('active', true).limit(1),
+        sb.from('students').select('*').order('grade').order('name')
+      ]);
+      semester = semRes.data?.[0] || null;
+      students = stRes.data || [];
+
+      records = {};
+      if (semester) {
+        const { data: recs } = await sb.from('records').select('student_id,week_num,status').eq('semester_id', semester.id);
+        (recs || []).forEach(r => {
+          if (!records[r.student_id]) records[r.student_id] = {};
+          records[r.student_id][r.week_num] = r.status;
+        });
+      }
+      renderDash(); renderCheckTable(); renderStudentList(); renderAwards(); renderSettings();
+    } finally { loading(false); }
+  }
+
+  // ── 탭 ──
+  const TABS = ['dash','check','students','award','settings'];
+  function showTab(tab) {
+    TABS.forEach(t => {
+      document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+      document.getElementById('mn-'+t).classList.toggle('on', t === tab);
+    });
+  }
+
+  // ── 전체 현황 ──
+  function chickenEmoji(pct) {
+    if (pct === 0) return '🥚';
+    if (pct < 0.4) return '🐣';
+    if (pct < 0.7) return '🐥';
+    if (pct < 1.0) return '🐔';
+    return '🐓';
+  }
+
+  function calcWeek(sem) {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    const first = new Date(sem.first_check_date + 'T00:00:00Z');
+    const diff = kst - first;
+    return diff < 0 ? 0 : Math.floor(diff / (7 * 86400000)) + 1;
+  }
+
+  function renderDash() {
+    const activeStudents = students.filter(s => s.active);
+    const weekNum = semester ? calcWeek(semester) : 0;
+    let done=0, partial=0, missed=0;
+    activeStudents.forEach(s => {
+      const r = records[s.id]?.[weekNum];
+      if (r === 'done') done++;
+      else if (r === 'partial') partial++;
+      else missed++;
+    });
+    document.getElementById('dashSub').textContent = semester
+      ? `${semester.year}년 ${semester.semester}학기 · 총 ${semester.total_weeks}주차` : '진행 중인 학기 없음';
+    document.getElementById('statRow').innerHTML = `
+      <div class="stat-card"><div class="st-n">${activeStudents.length}</div><div class="st-l">전체 학생</div></div>
+      <div class="stat-card"><div class="st-n" style="color:var(--p)">${done}</div><div class="st-l">이번주 완료</div></div>
+      <div class="stat-card"><div class="st-n" style="color:var(--gold)">${partial}</div><div class="st-l">부분완료</div></div>
+      <div class="stat-card"><div class="st-n" style="color:#EF4444">${missed}</div><div class="st-l">미체크</div></div>
+    `;
+    const grid = document.getElementById('studentGrid');
+    grid.innerHTML = '';
+    const weeks = semester?.total_weeks || 0;
+    activeStudents.forEach(s => {
+      const recs = records[s.id] || {};
+      const checked = Object.keys(recs).length;
+      const pct = weeks > 0 ? checked / weeks : 0;
+      grid.innerHTML += `
+        <div class="s-card">
+          <div class="sc-em">${chickenEmoji(pct)}</div>
+          <div class="sc-nm">${s.name}</div>
+          <div class="sc-gr">${s.grade}</div>
+          <div class="sc-pc">${weeks > 0 ? Math.round(pct*100) : 0}%</div>
+          <div class="sc-pb"><div class="sc-pf" style="width:${pct*100}%"></div></div>
+        </div>`;
+    });
+  }
+
+  // ── 주차별 테이블 ──
+  function renderCheckTable() {
+    const weeks = semester ? Math.min(semester.total_weeks, calcWeek(semester)) : 0;
+    document.getElementById('checkSub').textContent = semester ? `${semester.year}년 ${semester.semester}학기` : '';
+    let th = '<tr><th style="text-align:left;padding-left:16px">이름</th><th>학년</th>';
+    for (let w=1;w<=weeks;w++) th += `<th>${w}주</th>`;
+    document.getElementById('checkThead').innerHTML = th + '</tr>';
+    let tb = '';
+    students.filter(s=>s.active).forEach(s => {
+      const recs = records[s.id] || {};
+      tb += `<tr><td>${s.name}</td><td>${s.grade}</td>`;
+      for (let w=1;w<=weeks;w++) {
+        const r = recs[w];
+        tb += `<td>${r==='done'?'✅':r==='partial'?'🔶':'<span style="color:#D1D5DB">—</span>'}</td>`;
+      }
+      tb += '</tr>';
+    });
+    document.getElementById('checkTbody').innerHTML = tb;
+  }
+
+  // ── 학생 목록 ──
+  function renderStudentList() {
+    let html = '';
+    students.forEach(s => {
+      html += `<tr>
+        <td>${s.name}</td><td>${s.grade}</td><td>${s.gender}</td>
+        <td style="letter-spacing:2px;font-weight:700;color:var(--p)">${s.pin}</td>
+        <td><span style="font-size:11px;padding:3px 10px;border-radius:99px;font-weight:700;background:${s.active?'#D1FAE5':'#F3F4F6'};color:${s.active?'#065F46':'#9CA3AF'}">${s.active?'재학':'비활성'}</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="toggleStudent('${s.id}',${s.active})">${s.active?'비활성화':'복원'}</button></td>
+      </tr>`;
+    });
+    document.getElementById('studentListBody').innerHTML = html;
+  }
+
+  async function toggleStudent(id, active) {
+    if (!confirm(`${active?'비활성화':'복원'}하시겠습니까?`)) return;
+    loading(true);
+    await sb.from('students').update({ active: !active }).eq('id', id);
+    await loadAll();
+  }
+
+  // ── 개별 등록 ──
+  function updatePin() {
+    const phone = document.getElementById('regPhone').value.replace(/\D/g,'');
+    const bday = document.getElementById('regBday').value;
+    const last4 = phone.slice(-4);
+    const pin = last4.length===4 && bday.length===4 ? `${last4} · ${bday}` : '- - - -';
+    document.getElementById('pinPre').innerHTML = `🔐 생성될 PIN: <b style="letter-spacing:2px">${pin}</b>`;
+  }
+
+  async function registerStudent() {
+    const name  = document.getElementById('regName').value.trim();
+    const grade = document.getElementById('regGrade').value;
+    const gender= document.getElementById('regGender').value;
+    const phone = document.getElementById('regPhone').value.replace(/\D/g,'');
+    const bday  = document.getElementById('regBday').value.trim();
+    const errEl = document.getElementById('regErr');
+    const okEl  = document.getElementById('regOk');
+    errEl.style.display='none'; okEl.style.display='none';
+
+    if (!name)             { showMsg(errEl,'이름을 입력하세요.'); return; }
+    if (phone.length < 10) { showMsg(errEl,'전화번호를 확인해주세요.'); return; }
+    if (!/^\d{4}$/.test(bday)) { showMsg(errEl,'생일은 4자리 숫자(MMDD)로 입력하세요.'); return; }
+
+    const pin = phone.slice(-4) + bday;
+    const { data: dup } = await sb.from('students').select('id').eq('pin', pin).limit(1);
+    if (dup?.length) { showMsg(errEl,`PIN(${pin})이 중복됩니다. 전화번호 또는 생일을 확인해주세요.`); return; }
+
+    loading(true);
+    const { error } = await sb.from('students').insert({ name, grade, gender, phone, birthday: bday, pin, active: true });
+    loading(false);
+    if (error) { showMsg(errEl,'등록 중 오류: '+error.message); return; }
+    showMsg(okEl, `${name} 학생 등록 완료. PIN: ${pin}`);
+    document.getElementById('regName').value=''; document.getElementById('regPhone').value=''; document.getElementById('regBday').value='';
+    updatePin(); await loadAll();
+  }
+
+  // ── 엑셀 업로드 ──
+  function handleExcel(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type:'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header:1 });
+        xlsxRows = rows.slice(1).filter(r => r[0]);
+        // 미리보기
+        document.getElementById('xlsxPreview').style.display='block';
+        document.getElementById('xlsxBtn').style.display='block';
+        document.getElementById('xlsxPreviewLabel').textContent=`${xlsxRows.length}명 확인됨`;
+        let html='<thead><tr><th style="text-align:left;padding-left:12px">이름</th><th>학년</th><th>성별</th><th>전화</th><th>생일</th><th>PIN</th></tr></thead><tbody>';
+        xlsxRows.forEach(r => {
+          const ph=String(r[3]||'').replace(/\D/g,''), bd=String(r[4]||'').padStart(4,'0'), pin=ph.slice(-4)+bd;
+          html+=`<tr><td style="padding-left:12px">${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${bd}</td><td style="font-weight:700;color:var(--p)">${pin}</td></tr>`;
+        });
+        document.getElementById('xlsxPreviewTable').innerHTML=html+'</tbody>';
+      } catch(e) { showMsg(document.getElementById('xlsxErr'),'파일 읽기 실패'); console.error(e); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  async function uploadExcel() {
+    if (!xlsxRows.length) return;
+    loading(true);
+    const errEl=document.getElementById('xlsxErr'), okEl=document.getElementById('xlsxOk');
+    errEl.style.display='none'; okEl.style.display='none';
+    const rows = xlsxRows.map(r => {
+      const ph=String(r[3]||'').replace(/\D/g,''), bd=String(r[4]||'').padStart(4,'0');
+      return { name:String(r[0]||'').trim(), grade:String(r[1]||'').trim(), gender:String(r[2]||'').trim(), phone:ph, birthday:bd, pin:ph.slice(-4)+bd, active:true };
+    }).filter(r => r.name && r.phone.length>=10 && r.birthday.length===4);
+
+    const { error } = await sb.from('students').insert(rows);
+    loading(false);
+    if (error) { showMsg(errEl,'업로드 오류: '+error.message); return; }
+    showMsg(okEl, `${rows.length}명 등록 완료`);
+    xlsxRows=[]; document.getElementById('xlsxInput').value='';
+    document.getElementById('xlsxPreview').style.display='none';
+    document.getElementById('xlsxBtn').style.display='none';
+    await loadAll();
+  }
+
+  // ── 시상 ──
+  function renderAwards() {
+    const sem = semester;
+    document.getElementById('awardSub').textContent = sem ? `${sem.year}년 ${sem.semester}학기 (총 ${sem.total_weeks}주)` : '';
+    const result = document.getElementById('awardResult');
+    if (!sem) { result.innerHTML='<div style="color:var(--sub);font-size:14px">진행 중인 학기가 없습니다.</div>'; return; }
+    const total = sem.total_weeks;
+    const diligent=[], effort=[];
+    students.filter(s=>s.active).forEach(s => {
+      const recs = records[s.id]||{};
+      const done=Object.values(recs).filter(v=>v==='done').length;
+      const partial=Object.values(recs).filter(v=>v==='partial').length;
+      if (done===total && partial===0) diligent.push(s);
+      else if (partial===1 && done===total-1) effort.push(s);
+    });
+    let html='';
+    if (diligent.length) {
+      html+='<div class="aw-sec">🏆 성실상</div>';
+      diligent.forEach(s=>{ html+=`<div class="aw-card"><div class="aw-em">🐓</div><div class="aw-inf"><div class="aw-nm">${s.name}</div><div class="aw-dt">${s.grade} · 전체 ${total}주 완료</div></div><span class="aw-bd bd-g">성실상</span></div>`; });
+    }
+    if (effort.length) {
+      html+='<div class="aw-sec" style="margin-top:18px">🌱 노력상</div>';
+      effort.forEach(s=>{ html+=`<div class="aw-card"><div class="aw-em">🐔</div><div class="aw-inf"><div class="aw-nm">${s.name}</div><div class="aw-dt">${s.grade} · 부분완료 1회</div></div><span class="aw-bd bd-gr">노력상</span></div>`; });
+    }
+    if (!diligent.length && !effort.length) html='<div style="color:var(--sub);font-size:14px;padding:20px 0">아직 시상 대상자가 없습니다.</div>';
+    result.innerHTML=html;
+  }
+
+  function exportAwards() {
+    if (!semester) return;
+    const total=semester.total_weeks;
+    const rows=[['구분','이름','학년','성별','완료수','부분완료수']];
+    students.filter(s=>s.active).forEach(s=>{
+      const recs=records[s.id]||{};
+      const done=Object.values(recs).filter(v=>v==='done').length;
+      const partial=Object.values(recs).filter(v=>v==='partial').length;
+      let award='';
+      if (done===total&&partial===0) award='성실상';
+      else if (partial===1&&done===total-1) award='노력상';
+      if (award) rows.push([award,s.name,s.grade,s.gender,done,partial]);
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows), wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'시상명단');
+    XLSX.writeFile(wb,`조이랜드_${semester.year}년_${semester.semester}학기_시상명단.xlsx`);
+    showToast('📋 다운로드 완료!');
+  }
+
+  // ── 학기 설정 ──
+  function renderSettings() {
+    document.getElementById('semYear').value=new Date().getFullYear();
+    if (semester) {
+      document.getElementById('curSemInfo').innerHTML=`<b>${semester.year}년 ${semester.semester}학기</b> 진행 중<br>총 ${semester.total_weeks}주 · 첫 체크일: ${semester.first_check_date}`;
+      document.getElementById('curSemBox').style.display='block';
+    } else {
+      document.getElementById('curSemBox').style.display='none';
+    }
+  }
+
+  async function createSemester() {
+    const year=parseInt(document.getElementById('semYear').value);
+    const sem=parseInt(document.getElementById('semNum').value);
+    const total=parseInt(document.getElementById('semWeeks').value);
+    const firstCheck=document.getElementById('semFirstCheck').value;
+    const errEl=document.getElementById('semErr'), okEl=document.getElementById('semOk');
+    errEl.style.display='none'; okEl.style.display='none';
+    if (!year||!total||!firstCheck) { showMsg(errEl,'모든 항목을 입력해주세요.'); return; }
+    if (new Date(firstCheck).getUTCDay()!==2) { showMsg(errEl,'첫 체크일은 화요일이어야 합니다.'); return; }
+    if (semester) { showMsg(errEl,'현재 학기를 먼저 종료해주세요.'); return; }
+    loading(true);
+    const { error }=await sb.from('semesters').insert({ year, semester:sem, total_weeks:total, first_check_date:firstCheck, active:true });
+    loading(false);
+    if (error) { showMsg(errEl,'오류: '+error.message); return; }
+    showMsg(okEl,`${year}년 ${sem}학기 시작!`);
+    await loadAll();
+  }
+
+  async function endSemester() {
+    if (!semester||!confirm('현재 학기를 종료하시겠습니까?')) return;
+    loading(true);
+    await sb.from('semesters').update({ active:false }).eq('id', semester.id);
+    await loadAll();
+    showToast('학기가 종료되었습니다.');
+  }
+
+  // ── 유틸 ──
+  function loading(v) { document.getElementById('ldOv').style.display=v?'flex':'none'; }
+  function showMsg(el,msg) { el.textContent=msg; el.style.display='block'; }
+  function showToast(msg) {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+</script>
+</body>
+</html>

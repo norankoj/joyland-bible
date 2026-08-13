@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>조이랜드 통독</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --gold:#FFB800; --amber:#FF8C42; --green:#2DC38C; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; --bg:#F8F6FF; }
+    body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .page { max-width: 430px; margin: 0 auto; }
+
+    .header { padding: 24px 20px 52px; color: white; }
+    .header.normal { background: linear-gradient(135deg, #7B4FE8, #9F75FF); }
+    .header.tuesday { background: linear-gradient(135deg, #5B2ED6, #9B6AFF); }
+    .header-gr { font-size: 13px; opacity: 0.78; margin-bottom: 5px; }
+    .header-nm { font-size: 23px; font-weight: 900; }
+    .header-nm span { font-size: 15px; font-weight: 400; opacity: 0.8; }
+
+    .tue-banner {
+      background: linear-gradient(135deg, #FF8C42, #FFB800);
+      margin: 0 16px; padding: 14px 18px;
+      border-radius: 20px 20px 0 0;
+      display: flex; align-items: center; gap: 12px;
+      color: white;
+    }
+    .tue-banner .bic { font-size: 28px; }
+    .tue-banner .bt { font-size: 14px; font-weight: 800; }
+    .tue-banner .bs { font-size: 11px; opacity: 0.88; margin-top: 2px; }
+
+    .child-card {
+      background: white; border-radius: 24px;
+      margin: -32px 16px 0; padding: 20px;
+      box-shadow: 0 10px 36px rgba(123,79,232,0.12);
+    }
+    .child-card.no-overlap { margin-top: 0; border-radius: 0 0 24px 24px; }
+    .child-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .child-av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #FFD580, #FF8C42);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .child-name { font-size: 17px; font-weight: 800; }
+    .child-grade { font-size: 12px; color: var(--sub); margin-top: 2px; }
+    .child-deadline { font-size: 12px; color: #EF4444; font-weight: 700; margin-top: 2px; }
+    .pr-lbl { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 7px; }
+    .pr-cnt { font-weight: 800; color: var(--p); }
+    .pr-bg { background: var(--pl); border-radius: 99px; height: 9px; overflow: hidden; }
+    .pr-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--p), #B088FF); transition: width 0.6s ease; }
+
+    .lock-notice {
+      margin: 16px 16px 0; background: white; border-radius: 16px;
+      padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .lock-notice .lic { font-size: 28px; }
+    .lock-notice .lt { font-size: 13px; font-weight: 700; }
+    .lock-notice .ls { font-size: 11px; color: var(--sub); margin-top: 2px; }
+
+    .sec { padding: 20px 16px; }
+    .sec-t { font-size: 15px; font-weight: 800; margin-bottom: 14px; }
+    .sec-hint { font-size: 11px; color: var(--p); font-weight: 700; background: var(--pl); padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; }
+
+    .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .stamp {
+      aspect-ratio: 1; border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .stamp-ic { font-size: 16px; }
+    .stamp-wk { font-size: 9px; margin-top: 1px; }
+    .stamp.done { background: linear-gradient(135deg, #7B4FE8, #B088FF); color: white; box-shadow: 0 4px 14px rgba(123,79,232,0.3); }
+    .stamp.partial { background: linear-gradient(135deg, #FFB800, #FF8C42); color: white; box-shadow: 0 4px 12px rgba(255,184,0,0.28); }
+    .stamp.open { background: white; color: var(--p); border: 3px solid var(--p); cursor: pointer; animation: pulse 1.6s ease-in-out infinite; }
+    .stamp.open:active { transform: scale(0.9); }
+    .stamp.locked { background: #EDEBF8; color: #A89ED4; border: 2px solid #D5CFF4; }
+    .stamp.missed { background: #F5F3FF; color: #C4BBE8; }
+    .stamp.future { background: #EDEBF8; color: #B0A8D4; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(123,79,232,0.3)} 50%{box-shadow:0 0 0 8px rgba(123,79,232,0)} }
+
+    .hist-item { display: flex; align-items: center; padding: 13px 0; border-bottom: 1px solid #F0EBFF; gap: 12px; }
+    .hist-item:last-child { border-bottom: none; }
+    .hist-ic { font-size: 22px; }
+    .hist-inf { flex: 1; }
+    .hist-wk { font-size: 13px; font-weight: 700; }
+    .hist-dt { font-size: 11px; color: var(--sub); margin-top: 2px; }
+    .hist-st { font-size: 12px; font-weight: 800; }
+    .hist-st.done { color: var(--green); }
+    .hist-st.partial { color: var(--amber); }
+    .hist-st.missed { color: #D1D5DB; }
+
+    .logout-btn { display: block; text-align: center; padding: 16px; font-size: 13px; color: var(--sub); cursor: pointer; border: none; background: none; width: 100%; }
+
+    .loading-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 999; }
+    .loading-screen.hidden { display: none; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--pl); border-top-color: var(--p); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .overlay { position: fixed; inset: 0; background: rgba(10,0,40,0.55); display: none; align-items: flex-end; justify-content: center; z-index: 999; backdrop-filter: blur(3px); }
+    .overlay.show { display: flex; }
+    .sheet { background: white; border-radius: 28px 28px 0 0; padding: 8px 24px 40px; width: 100%; max-width: 430px; }
+    .sheet-handle { width: 40px; height: 4px; background: #DDD; border-radius: 99px; margin: 14px auto 22px; }
+    .sheet-t { font-size: 19px; font-weight: 900; text-align: center; margin-bottom: 4px; }
+    .sheet-sub { font-size: 13px; color: var(--sub); text-align: center; margin-bottom: 24px; }
+    .check-opt { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 18px; border: 2.5px solid var(--bdr); margin-bottom: 10px; cursor: pointer; transition: transform 0.12s; }
+    .check-opt:active { transform: scale(0.97); }
+    .check-opt.complete { border-color: var(--p); background: var(--pl); }
+    .check-opt.partial-opt { border-color: var(--gold); background: #FFFAEB; }
+    .check-opt-ic { font-size: 28px; }
+    .check-opt-lbl { font-size: 15px; font-weight: 700; }
+    .check-opt-desc { font-size: 11px; color: var(--sub); margin-top: 2px; }
+
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1E1248; color: white; padding: 12px 24px; border-radius: 99px; font-size: 14px; font-weight: 700; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:#8B87A0;">불러오는 중...</div>
+</div>
+
+<div class="page" id="mainPage" style="display:none">
+  <div class="header" id="pageHeader">
+    <div class="header-gr" id="headerGreet"></div>
+    <div class="header-nm" id="headerName"></div>
+  </div>
+
+  <div class="tue-banner" id="tueBanner" style="display:none">
+    <div class="bic">✏️</div>
+    <div>
+      <div class="bt">이번 주 통독 체크하기</div>
+      <div class="bs">오늘 자정(24:00)까지 가능해요!</div>
+    </div>
+  </div>
+
+  <div class="lock-notice" id="lockNotice" style="display:none">
+    <div class="lic">🔒</div>
+    <div>
+      <div class="lt">체크는 화요일에만 가능해요</div>
+      <div class="ls" id="nextCheckLabel"></div>
+    </div>
+  </div>
+
+  <div class="child-card" id="childCard">
+    <div class="child-row">
+      <div class="child-av">🦁</div>
+      <div>
+        <div class="child-name" id="childName"></div>
+        <div class="child-grade" id="childGrade"></div>
+        <div class="child-deadline" id="childDeadline" style="display:none">⏰ 마감: 오늘 자정까지!</div>
+      </div>
+    </div>
+    <div class="pr-lbl">
+      <span>이번 학기 통독</span>
+      <span class="pr-cnt" id="progressLabel">0 / 0주 완료</span>
+    </div>
+    <div class="pr-bg"><div class="pr-fill" id="progressBar" style="width:0%"></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-t">📅 도장판</div>
+    <div class="sec-hint" id="stampHint" style="display:none"></div>
+    <div class="stamp-grid" id="stampGrid"></div>
+  </div>
+
+  <div class="sec" style="padding-top:0">
+    <div class="sec-t">📋 최근 통독 내역</div>
+    <div id="histList"></div>
+  </div>
+
+  <button class="logout-btn" onclick="logout()">로그아웃</button>
+  <div style="height:20px"></div>
+</div>
+
+<div class="overlay" id="checkOverlay" onclick="hideSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-t" id="sheetTitle"></div>
+    <div class="sheet-sub" id="sheetSub"></div>
+    <div class="check-opt complete" onclick="submitCheck('done')">
+      <span class="check-opt-ic">📖</span>
+      <div>
+        <div class="check-opt-lbl">완료했어요!</div>
+        <div class="check-opt-desc">이번 주 성경통독을 모두 마쳤어요</div>
+      </div>
+    </div>
+    <div class="check-opt partial-opt" onclick="submitCheck('partial')">
+      <span class="check-opt-ic">📗</span>
+      <div>
+        <div class="check-opt-lbl">부분완료</div>
+        <div class="check-opt-desc">일부만 읽었어요</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script>
+  let student = null, semester = null, weekRecords = {}, checkingWeek = null;
+
+  function isTuesdayKST() {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    return kst.getUTCDay() === 2;
+  }
+
+  function nextTuesdayLabel() {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    const day = kst.getUTCDay();
+    const daysUntil = (2 - day + 7) % 7 || 7;
+    const next = new Date(kst);
+    next.setUTCDate(kst.getUTCDate() + daysUntil);
+    return `다음 체크일: ${next.getUTCMonth()+1}월 ${next.getUTCDate()}일(화)`;
+  }
+
+  function calcCurrentWeek(sem) {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    const first = new Date(sem.first_check_date + 'T00:00:00Z');
+    const diff = kst - first;
+    if (diff < 0) return 0;
+    return Math.floor(diff / (7 * 86400000)) + 1;
+  }
+
+  function getCheckDate(sem, weekNum) {
+    const first = new Date(sem.first_check_date + 'T00:00:00Z');
+    const d = new Date(first);
+    d.setUTCDate(first.getUTCDate() + (weekNum - 1) * 7);
+    return d;
+  }
+
+  function fmtDate(d) {
+    const days = ['일','월','화','수','목','금','토'];
+    return `${d.getUTCMonth()+1}/${d.getUTCDate()}(${days[d.getUTCDay()]})`;
+  }
+
+  function weekRange(sem, w) {
+    const tue = getCheckDate(sem, w);
+    const wed = new Date(tue); wed.setUTCDate(tue.getUTCDate() - 6);
+    const mon = new Date(tue); mon.setUTCDate(tue.getUTCDate() - 1);
+    return `${fmtDate(wed)} ~ ${fmtDate(mon)}`;
+  }
+
+  async function init() {
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) { window.location.href = 'index.html'; return; }
+
+    try {
+      // 학생 정보
+      const { data: st, error: stErr } = await sb.from('students').select('*').eq('id', studentId).single();
+      if (stErr || !st || !st.active) { localStorage.clear(); window.location.href = 'index.html'; return; }
+      student = st;
+
+      // 활성 학기
+      const { data: sems } = await sb.from('semesters').select('*').eq('active', true).limit(1);
+      semester = sems?.[0] || null;
+
+      if (semester) {
+        // 이번 학기 기록
+        const { data: recs } = await sb.from('records')
+          .select('week_num, status')
+          .eq('student_id', studentId)
+          .eq('semester_id', semester.id);
+        (recs || []).forEach(r => { weekRecords[r.week_num] = r.status; });
+      }
+
+      renderPage();
+    } catch (e) {
+      console.error(e);
+      alert('데이터를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('mainPage').style.display = 'block';
+    }
+  }
+
+  function renderPage() {
+    const isTue = isTuesdayKST();
+    const totalWeeks = semester?.total_weeks || 0;
+    const checkedCount = Object.keys(weekRecords).length;
+    const currentWeek = semester ? calcCurrentWeek(semester) : 0;
+
+    // 헤더
+    document.getElementById('pageHeader').className = 'header ' + (isTue ? 'tuesday' : 'normal');
+    document.getElementById('headerGreet').textContent = isTue ? '오늘은 화요일이에요! 📅' : '안녕하세요 👋';
+    document.getElementById('headerName').innerHTML = `${student.name} <span>학부모님</span>`;
+
+    // 화요일 배너 / 잠금
+    if (isTue && currentWeek >= 1 && currentWeek <= totalWeeks) {
+      document.getElementById('tueBanner').style.display = 'flex';
+      document.getElementById('childDeadline').style.display = 'block';
+    } else if (!isTue) {
+      document.getElementById('lockNotice').style.display = 'flex';
+      document.getElementById('nextCheckLabel').textContent = nextTuesdayLabel();
+    }
+
+    // 자녀 카드
+    document.getElementById('childCard').className = 'child-card' + (isTue ? ' no-overlap' : '');
+    document.getElementById('childName').textContent = student.name;
+    document.getElementById('childGrade').textContent =
+      semester ? `${student.grade} · ${semester.year}년 ${semester.semester}학기` : student.grade;
+    document.getElementById('progressLabel').textContent = `${checkedCount} / ${totalWeeks}주 완료`;
+    document.getElementById('progressBar').style.width = totalWeeks > 0 ? `${(checkedCount/totalWeeks)*100}%` : '0%';
+
+    // 도장판
+    if (isTue && currentWeek >= 1 && currentWeek <= totalWeeks && !weekRecords[currentWeek]) {
+      const hint = document.getElementById('stampHint');
+      hint.textContent = `✨ ${currentWeek}주차 도장을 눌러 체크하세요!`;
+      hint.style.display = 'block';
+    }
+    renderStamps(totalWeeks, isTue, currentWeek);
+    renderHistory(totalWeeks, currentWeek);
+  }
+
+  function renderStamps(totalWeeks, isTue, currentWeek) {
+    const grid = document.getElementById('stampGrid');
+    grid.innerHTML = '';
+    const now = new Date();
+    for (let w = 1; w <= totalWeeks; w++) {
+      const div = document.createElement('div');
+      div.className = 'stamp';
+      const status = weekRecords[w];
+      const checkDate = semester ? getCheckDate(semester, w) : null;
+
+      if (status) {
+        div.classList.add(status);
+        div.innerHTML = `<div class="stamp-ic">${status === 'done' ? '📖' : '📗'}</div><div class="stamp-wk">${w}주</div>`;
+      } else if (w === currentWeek && isTue) {
+        div.classList.add('open');
+        div.innerHTML = `<div class="stamp-ic">✏️</div><div class="stamp-wk">${w}주</div>`;
+        div.onclick = () => openSheet(w);
+      } else if (w === currentWeek && !isTue) {
+        div.classList.add('locked');
+        div.innerHTML = `<div class="stamp-ic">🔒</div><div class="stamp-wk">${w}주</div>`;
+      } else if (checkDate && checkDate < now && w < currentWeek) {
+        div.classList.add('missed');
+        div.innerHTML = `<div class="stamp-ic">—</div><div class="stamp-wk">${w}주</div>`;
+      } else {
+        div.classList.add('future');
+        div.innerHTML = `<div class="stamp-wk">${w}주</div>`;
+      }
+      grid.appendChild(div);
+    }
+  }
+
+  function renderHistory(totalWeeks, currentWeek) {
+    const list = document.getElementById('histList');
+    list.innerHTML = '';
+    const weeks = [];
+    for (let w = Math.min(currentWeek, totalWeeks); w >= 1 && weeks.length < 5; w--) weeks.push(w);
+    if (!weeks.length) {
+      list.innerHTML = '<div style="text-align:center;color:#8B87A0;font-size:13px;padding:16px 0">아직 체크 내역이 없어요</div>';
+      return;
+    }
+    weeks.forEach(w => {
+      const status = weekRecords[w];
+      const range = semester ? weekRange(semester, w) : '';
+      const checkDate = semester ? fmtDate(getCheckDate(semester, w)) : '';
+      let icon = '—', statusHtml = '미체크', statusClass = 'missed';
+      if (status === 'done') { icon = '📖'; statusHtml = '완료 ✅'; statusClass = 'done'; }
+      else if (status === 'partial') { icon = '📗'; statusHtml = '부분완료 🔶'; statusClass = 'partial'; }
+      const div = document.createElement('div');
+      div.className = 'hist-item';
+      div.innerHTML = `
+        <div class="hist-ic">${icon}</div>
+        <div class="hist-inf">
+          <div class="hist-wk">${w}주차 · ${range}</div>
+          <div class="hist-dt">${checkDate} 체크일</div>
+        </div>
+        <div class="hist-st ${statusClass}">${statusHtml}</div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function openSheet(weekNum) {
+    if (weekRecords[weekNum]) return;
+    checkingWeek = weekNum;
+    document.getElementById('sheetTitle').textContent = `${weekNum}주차 통독 체크`;
+    document.getElementById('sheetSub').textContent = semester ? weekRange(semester, weekNum) : '';
+    document.getElementById('checkOverlay').classList.add('show');
+  }
+
+  function hideSheet(e) {
+    if (e.target === document.getElementById('checkOverlay'))
+      document.getElementById('checkOverlay').classList.remove('show');
+  }
+
+  async function submitCheck(status) {
+    document.getElementById('checkOverlay').classList.remove('show');
+    const w = checkingWeek;
+    try {
+      const { error } = await sb.from('records').insert({
+        student_id: student.id,
+        semester_id: semester.id,
+        week_num: w,
+        status: status
+      });
+      if (error) throw error;
+
+      weekRecords[w] = status;
+      const totalWeeks = semester.total_weeks;
+      const checkedCount = Object.keys(weekRecords).length;
+      const currentWeek = calcCurrentWeek(semester);
+
+      document.getElementById('progressLabel').textContent = `${checkedCount} / ${totalWeeks}주 완료`;
+      document.getElementById('progressBar').style.width = `${(checkedCount/totalWeeks)*100}%`;
+      renderStamps(totalWeeks, isTuesdayKST(), currentWeek);
+      renderHistory(totalWeeks, currentWeek);
+      document.getElementById('stampHint').style.display = 'none';
+      showToast(status === 'done' ? '📖 완료 도장 찍었어요!' : '📗 부분완료로 기록했어요!');
+    } catch (e) {
+      console.error(e);
+      alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+  init();
+</script>
+</body>
+</html>
