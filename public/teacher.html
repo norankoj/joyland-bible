@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>조이랜드 · 출석 체크</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --green:#2DC38C; --orange:#FF8C42; --red:#EF4444; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; }
+
+    body {
+      font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+      background: #EDE8FF;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px 20px;
+    }
+
+    /* ── 로그인 카드 ── */
+    .login-card {
+      background: white; border-radius: 32px;
+      padding: 36px 28px; width: 100%; max-width: 340px;
+      box-shadow: 0 24px 64px rgba(107,63,216,0.28);
+    }
+    .lc-badge { display: inline-block; background: rgba(45,195,140,.12); color: var(--green); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; margin-bottom: 14px; letter-spacing: .05em; }
+    .lc-em { font-size: 52px; text-align: center; margin-bottom: 12px; }
+    .lc-t { font-size: 22px; font-weight: 900; text-align: center; color: var(--text); margin-bottom: 4px; }
+    .lc-s { font-size: 13px; color: var(--sub); text-align: center; margin-bottom: 28px; }
+    .lc-lbl { font-size: 11px; font-weight: 700; color: var(--sub); margin-bottom: 6px; }
+    .lc-fld {
+      width: 100%; padding: 14px 16px;
+      border: 2px solid var(--bdr); border-radius: 16px;
+      font-size: 14px; outline: none; font-family: inherit;
+      color: var(--text); background: #F8F6FF;
+      margin-bottom: 14px;
+    }
+    .lc-fld:focus { border-color: var(--p); background: var(--pl); }
+    /* ── 커스텀 드롭다운 ── */
+    .dd-wrap { position: relative; margin-bottom: 14px; }
+    .dd-trigger {
+      width: 100%; padding: 14px 16px;
+      border: 2px solid var(--bdr); border-radius: 16px;
+      font-size: 14px; font-family: inherit;
+      color: var(--sub); background: #F8F6FF;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .dd-trigger.selected { color: var(--text); }
+    .dd-trigger.open { border-color: var(--p); background: var(--pl); }
+    .dd-arrow { width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.2s; color: var(--sub); }
+    .dd-trigger.open .dd-arrow { transform: rotate(180deg); }
+    .dd-list {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+      background: white; border-radius: 16px;
+      border: 1.5px solid var(--bdr);
+      box-shadow: 0 8px 32px rgba(107,63,216,0.18);
+      z-index: 100; overflow: hidden;
+      max-height: 0; opacity: 0;
+      transition: max-height 0.22s ease, opacity 0.18s ease;
+      pointer-events: none;
+    }
+    .dd-list.open { max-height: 320px; opacity: 1; pointer-events: auto; overflow-y: auto; }
+    .dd-item {
+      padding: 13px 16px; font-size: 14px; font-weight: 600;
+      color: var(--text); cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      transition: background 0.1s;
+      border-bottom: 1px solid #F5F3FF;
+    }
+    .dd-item:last-child { border-bottom: none; }
+    .dd-item:hover { background: var(--pl); }
+    .dd-item.active { background: var(--pl); color: var(--p); font-weight: 800; }
+    .dd-item-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bdr); flex-shrink: 0; }
+    .dd-item.active .dd-item-dot { background: var(--p); }
+    .lc-btn {
+      width: 100%; padding: 16px; border-radius: 16px; border: none;
+      background: linear-gradient(135deg, #7B4FE8, #9F75FF);
+      color: white; font-size: 16px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(123,79,232,0.38);
+      transition: transform 0.1s; font-family: inherit;
+    }
+    .lc-btn:active { transform: scale(0.97); }
+    .lc-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .error-msg { background: #FEE2E2; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #991B1B; text-align: center; margin-bottom: 14px; display: none; }
+    .loading-txt { text-align: center; font-size: 13px; color: var(--sub); margin-bottom: 14px; display: none; }
+
+    /* ── 출석 체크 화면 ── */
+    #checkScreen {
+      display: none;
+      width: 100%; max-width: 100%;
+      background: #ffffff;
+      min-height: 100vh;
+    }
+    body.check-mode {
+      background: #ffffff;
+      align-items: center;
+      padding: 0;
+      justify-content: flex-start;
+    }
+    #checkScreen { display: none; flex-direction: column; }
+    body.check-mode #checkScreen { display: flex; }
+    body.check-mode #loginScreen { display: none; }
+
+    .ch-inner { max-width: 680px; margin: 0 auto; width: 100%; }
+    .ch-header {
+      padding: 40px 28px 16px;
+      background: white;
+      border-bottom: 1px solid #F0EBFF;
+    }
+    .ch-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .ch-title { font-size: 20px; font-weight: 900; color: var(--text); }
+    .ch-sub { font-size: 12px; color: var(--sub); margin-top: 3px; }
+    .ch-sub.saved { color: var(--green); font-weight: 700; }
+    .logout-sm { font-size: 12px; color: var(--sub); background: none; border: 1.5px solid var(--bdr); border-radius: 99px; padding: 5px 12px; cursor: pointer; font-family: inherit; }
+
+    .ch-summary {
+      display: flex; gap: 10px;
+      padding: 16px 28px;
+      background: white;
+      border-bottom: 1px solid #F0EBFF;
+    }
+    .ch-sum-c {
+      flex: 1; background: #F8F6FF; border-radius: 14px;
+      padding: 14px 8px; text-align: center;
+      border: 1px solid var(--bdr);
+    }
+    .ch-sum-n { font-size: 24px; font-weight: 900; line-height: 1; }
+    .ch-sum-l { font-size: 11px; color: var(--sub); margin-top: 5px; }
+
+    .ch-list { flex: 1; overflow-y: auto; }
+    .ch-stu {
+      display: flex; align-items: center;
+      padding: 15px 28px;
+      border-bottom: 1px solid #F0EBFF;
+      gap: 10px;
+    }
+    .ch-stu:last-child { border-bottom: none; }
+    .ch-info { flex: 1; }
+    .ch-nm { font-size: 14px; font-weight: 700; color: var(--text); }
+    .ch-gr { font-size: 11px; color: var(--sub); margin-top: 2px; }
+    .ch-opts { display: flex; gap: 5px; }
+    .ch-opt {
+      padding: 7px 11px; border-radius: 99px;
+      border: 1.5px solid var(--bdr); background: none;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      font-family: inherit; color: var(--sub); white-space: nowrap;
+      transition: all 0.1s;
+    }
+    .ch-opt:active { transform: scale(0.93); }
+    .ch-opt.ok  { background: #E9FAF4; border-color: var(--green); color: var(--green); }
+    .ch-opt.late { background: #FFF2E8; border-color: var(--orange); color: var(--orange); }
+    .ch-opt.absent { background: #FEE2E2; border-color: var(--red); color: var(--red); }
+
+    .ch-save-bar {
+      background: white;
+      border-top: 1px solid #F0EBFF;
+      padding: 14px 28px calc(14px + env(safe-area-inset-bottom));
+    }
+    .ch-save-btn {
+      width: 100%; padding: 14px; border-radius: 16px; border: none;
+      background: linear-gradient(135deg, #7B4FE8, #9F75FF);
+      color: white; font-size: 15px; font-weight: 800; cursor: pointer;
+      font-family: inherit; transition: transform 0.1s;
+    }
+    .ch-save-btn:active { transform: scale(0.97); }
+    .ch-save-btn.saved { background: none; border: 2px solid var(--bdr); color: var(--sub); }
+
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1E1248; color: white; padding: 12px 24px; border-radius: 99px; font-size: 14px; font-weight: 700; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; z-index: 999; }
+    .toast.show { opacity: 1; }
+    /* ── 주차 탭 ── */
+    .wk-tabs { display:flex; gap:6px; padding:10px 20px; overflow-x:auto; background:white; border-bottom:1px solid #F0EBFF; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .wk-tabs::-webkit-scrollbar { display:none; }
+    .wk-tab { flex-shrink:0; padding:7px 10px; border-radius:12px; border:1.5px solid var(--bdr); background:#F8F6FF; cursor:pointer; text-align:center; font-family:inherit; min-width:52px; transition:all 0.15s; }
+    .wk-tab:active { transform:scale(0.93); }
+    .wk-tab.active { background:var(--p); border-color:var(--p); }
+    .wk-tab.wk-opening { border-color:var(--green); background:#EDFAF4; }
+    .wk-tab.wk-break   { border-color:var(--orange); background:#FFF8F2; }
+    .wk-tab.wk-closing { border-color:#F43F5E; background:#FFF0F3; }
+    .wk-tab.active.wk-opening,
+    .wk-tab.active.wk-break,
+    .wk-tab.active.wk-closing { background:var(--p); border-color:var(--p); }
+    .wk-tab.wk-future { opacity:0.45; }
+    .wk-tab-n { font-size:12px; font-weight:800; color:var(--text); }
+    .wk-tab.active .wk-tab-n { color:white; }
+    .wk-tab-d { font-size:10px; color:var(--sub); margin-top:2px; }
+    .wk-tab.active .wk-tab-d { color:rgba(255,255,255,0.75); }
+    .wk-tab-tag { font-size:9px; font-weight:800; margin-top:2px; }
+    .wk-tab.wk-opening .wk-tab-tag { color:var(--green); }
+    .wk-tab.wk-break   .wk-tab-tag { color:var(--orange); }
+    .wk-tab.wk-closing .wk-tab-tag { color:#F43F5E; }
+    .wk-tab.active .wk-tab-tag { color:rgba(255,255,255,0.85); }
+  </style>
+</head>
+<body>
+
+<!-- ── 로그인 화면 ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="lc-badge">TEACHER</div>
+    <div class="lc-em">📋</div>
+    <div class="lc-t">선생님 로그인</div>
+    <div class="lc-s">출석 체크를 위해 로그인하세요</div>
+    <div class="error-msg" id="loginErr"></div>
+    <div class="loading-txt" id="loadingTxt">확인 중...</div>
+    <div>
+      <div class="lc-lbl">반 선택</div>
+      <div class="dd-wrap" id="ddWrap">
+        <div class="dd-trigger" id="ddTrigger" onclick="toggleDropdown()">
+          <span id="ddLabel">반을 선택하세요</span>
+          <svg class="dd-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="dd-list" id="ddList"></div>
+      </div>
+    </div>
+    <div>
+      <div class="lc-lbl">반 비밀번호</div>
+      <input class="lc-fld" type="password" id="classPw" placeholder="••••••"
+        onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="lc-btn" id="loginBtn" onclick="doLogin()">입장하기</button>
+  </div>
+</div>
+
+<!-- ── 출석 체크 화면 ── -->
+<div id="checkScreen">
+  <div class="ch-inner">
+    <div class="ch-header">
+      <div class="ch-header-top">
+        <div class="ch-title" id="chTitle"></div>
+        <button class="logout-sm" onclick="doLogout()">나가기</button>
+      </div>
+      <div class="ch-sub" id="chSub"></div>
+    </div>
+    <div class="wk-tabs" id="chWeekTabs"></div>
+    <div class="ch-summary" id="chSummary">
+      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-ok" style="color:var(--green)">0</div><div class="ch-sum-l">출석</div></div>
+      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-late" style="color:var(--orange)">0</div><div class="ch-sum-l">지각</div></div>
+      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-absent" style="color:var(--red)">0</div><div class="ch-sum-l">결석</div></div>
+      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-none" style="color:var(--sub)">0</div><div class="ch-sum-l">미처리</div></div>
+    </div>
+    <div class="ch-list" id="chList"></div>
+    <div class="ch-save-bar">
+      <button class="ch-save-btn" id="saveBtn" onclick="saveAll()">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script>
+  let currentClass = null, students = [], semester = null;
+  let attRecords = {};
+  let allRecords = {}; // studentId → { weekNum → status }
+  let pendingChanges = {};
+  let selectedClass = '';
+  let selectedWeek = 1;
+
+  function weekCheckDate(sem, w) {
+    const d = new Date(sem.first_check_date + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + (w - 1) * 7);
+    const days = ['일','월','화','수','목','금','토'];
+    return `${d.getUTCMonth()+1}월 ${d.getUTCDate()}일(${days[d.getUTCDay()]})`;
+  }
+
+  async function loadClasses() {
+    const { data } = await sb.from('joyland_classes').select('name').order('name');
+    const list = document.getElementById('ddList');
+    list.innerHTML = '';
+    (data || []).forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'dd-item';
+      item.dataset.value = c.name;
+      item.innerHTML = `<div class="dd-item-dot"></div>${c.name}`;
+      item.onclick = () => selectClass(c.name);
+      list.appendChild(item);
+    });
+  }
+
+  function toggleDropdown() {
+    const trigger = document.getElementById('ddTrigger');
+    const list = document.getElementById('ddList');
+    const isOpen = list.classList.contains('open');
+    if (isOpen) { closeDropdown(); return; }
+    trigger.classList.add('open');
+    list.classList.add('open');
+    document.addEventListener('click', outsideClick, true);
+  }
+
+  function closeDropdown() {
+    document.getElementById('ddTrigger').classList.remove('open');
+    document.getElementById('ddList').classList.remove('open');
+    document.removeEventListener('click', outsideClick, true);
+  }
+
+  function outsideClick(e) {
+    if (!document.getElementById('ddWrap').contains(e.target)) closeDropdown();
+  }
+
+  function selectClass(name) {
+    selectedClass = name;
+    const label = document.getElementById('ddLabel');
+    label.textContent = name;
+    document.getElementById('ddTrigger').classList.add('selected');
+    document.querySelectorAll('.dd-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.value === name);
+    });
+    closeDropdown();
+    document.getElementById('loginErr').style.display = 'none';
+  }
+
+  async function doLogin() {
+    const className = selectedClass;
+    const pw = document.getElementById('classPw').value.trim();
+    const errEl = document.getElementById('loginErr');
+    const loadEl = document.getElementById('loadingTxt');
+    const btn = document.getElementById('loginBtn');
+
+    errEl.style.display = 'none';
+    if (!className) { showErr('반을 선택해주세요.'); return; }
+    if (!pw) { showErr('비밀번호를 입력해주세요.'); return; }
+
+    btn.disabled = true;
+    loadEl.style.display = 'block';
+
+    try {
+      const { data, error } = await sb
+        .from('joyland_classes')
+        .select('password')
+        .eq('name', className)
+        .single();
+
+      if (error || !data) { showErr('반 정보를 찾을 수 없습니다.'); return; }
+      if (data.password !== pw) { showErr('비밀번호가 올바르지 않습니다.'); return; }
+
+      currentClass = className;
+      sessionStorage.setItem('teacherClass', className);
+      await enterCheckMode();
+    } catch (e) {
+      showErr('오류가 발생했습니다. 다시 시도해주세요.');
+      console.error(e);
+    } finally {
+      btn.disabled = false;
+      loadEl.style.display = 'none';
+    }
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('loginErr');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function enterCheckMode() {
+    // 활성 학기
+    const { data: sems } = await sb.from('joyland_semesters').select('*').eq('active', true).limit(1);
+    semester = sems?.[0] || null;
+
+    // 이 반 학생들
+    const { data: stus } = await sb
+      .from('joyland_students')
+      .select('id, name, grade, parent_name')
+      .eq('class_name', currentClass)
+      .eq('active', true)
+      .order('grade').order('name');
+    students = stus || [];
+
+    // 이번 학기 전체 출석 기록 로드
+    allRecords = {};
+    attRecords = {};
+    if (semester && students.length) {
+      const ids = students.map(s => s.id);
+      const { data: recs } = await sb
+        .from('joyland_attendance')
+        .select('student_id, week_num, status')
+        .eq('semester_id', semester.id)
+        .in('student_id', ids);
+      (recs || []).forEach(r => {
+        if (!allRecords[r.student_id]) allRecords[r.student_id] = {};
+        allRecords[r.student_id][r.week_num] = r.status;
+      });
+    }
+
+    // 선택 주차: 현재 주차로 초기화
+    selectedWeek = semester ? calcCurrentWeek(semester) : 1;
+    loadSelectedWeekRecords();
+
+    // UI 전환
+    document.body.classList.add('check-mode');
+    document.getElementById('chTitle').textContent = `${currentClass} 출석 체크`;
+    buildWeekTabs();
+    updateSubtitle();
+    renderStudents();
+    updateSummary();
+  }
+
+  function calcCurrentWeek(sem) {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    const first = new Date(sem.first_check_date + 'T00:00:00Z');
+    const diff = kst - first;
+    if (diff < 0) return 1;
+    return Math.min(Math.floor(diff / (7 * 86400000)) + 1, sem.total_weeks);
+  }
+
+  function isOpeningWeek() {
+    if (!semester) return false;
+    return new Set(semester.opening_weeks || []).has(selectedWeek);
+  }
+
+  function loadSelectedWeekRecords() {
+    attRecords = {};
+    students.forEach(s => {
+      const wRec = allRecords[s.id]?.[selectedWeek];
+      if (wRec) attRecords[s.id] = wRec;
+    });
+  }
+
+  function buildWeekTabs() {
+    if (!semester) return;
+    const totalWeeks = semester.total_weeks;
+    const currentWeek = calcCurrentWeek(semester);
+    const breakSet  = new Set(semester.break_weeks  || []);
+    const openSet   = new Set(semester.opening_weeks || []);
+    const closeSet  = new Set(semester.closing_weeks || []);
+    const container = document.getElementById('chWeekTabs');
+    let html = '';
+    for (let w = 1; w <= totalWeeks; w++) {
+      const isBreak   = breakSet.has(w);
+      const isOpenW   = openSet.has(w);
+      const isClose   = closeSet.has(w);
+      const isFuture  = w > currentWeek;
+      const isActive  = w === selectedWeek;
+      const d = new Date(semester.first_check_date + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() + (w - 1) * 7);
+      const days = ['일','월','화','수','목','금','토'];
+      const shortDate = `${d.getUTCMonth()+1}/${d.getUTCDate()}(${days[d.getUTCDay()]})`;
+      const tag = isOpenW ? '개강' : isBreak ? '방학' : isClose ? '종강' : '';
+      let cls = 'wk-tab';
+      if (isActive) cls += ' active';
+      if (isOpenW) cls += ' wk-opening';
+      else if (isBreak) cls += ' wk-break';
+      else if (isClose) cls += ' wk-closing';
+      if (isFuture) cls += ' wk-future';
+      html += `<button class="${cls}" onclick="selectWeek(${w})"><div class="wk-tab-n">${w}주</div><div class="wk-tab-d">${shortDate}</div>${tag ? `<div class="wk-tab-tag">${tag}</div>` : ''}</button>`;
+    }
+    container.innerHTML = html;
+    setTimeout(() => {
+      const active = container.querySelector('.wk-tab.active');
+      if (active) active.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    }, 50);
+  }
+
+  function selectWeek(w) {
+    if (w === selectedWeek) return;
+    if (semester && w > calcCurrentWeek(semester)) {
+      showToast('아직 오픈되지 않았습니다');
+      return;
+    }
+    if (Object.keys(pendingChanges).length > 0) {
+      if (!confirm('저장하지 않은 변경사항이 있어요. 주차를 이동하면 사라져요. 이동하시겠어요?')) return;
+      pendingChanges = {};
+    }
+    selectedWeek = w;
+    loadSelectedWeekRecords();
+    buildWeekTabs();
+    updateSubtitle();
+    renderStudents();
+    updateSummary();
+  }
+
+  function updateSubtitle() {
+    const subEl = document.getElementById('chSub');
+    const summaryEl = document.getElementById('chSummary');
+    const saveBtn = document.getElementById('saveBtn');
+    const weekLabel = semester ? `${selectedWeek}주차 · ${weekCheckDate(semester, selectedWeek)}` : '';
+    if (isOpeningWeek()) {
+      subEl.textContent = `${weekLabel} · 개강 주간 (시상 미포함)`;
+      subEl.className = 'ch-sub';
+      summaryEl.style.display = 'none';
+      saveBtn.style.display = 'none';
+      return;
+    }
+    summaryEl.style.display = '';
+    saveBtn.style.display = '';
+    const hasPending = Object.keys(pendingChanges).length > 0;
+    if (hasPending) {
+      subEl.textContent = `${weekLabel} · 저장되지 않은 변경사항이 있어요`;
+      subEl.className = 'ch-sub';
+    } else if (Object.keys(attRecords).length > 0) {
+      subEl.textContent = `${weekLabel} · 저장 완료 ✓`;
+      subEl.className = 'ch-sub saved';
+    } else {
+      subEl.textContent = `${weekLabel} · 출석을 체크하고 저장해주세요`;
+      subEl.className = 'ch-sub';
+    }
+    saveBtn.className = hasPending ? 'ch-save-btn' : 'ch-save-btn saved';
+    saveBtn.textContent = '저장하기';
+  }
+
+  function renderStudents() {
+    const list = document.getElementById('chList');
+    list.innerHTML = '';
+    if (!students.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:14px">이 반에 등록된 학생이 없어요</div>';
+      return;
+    }
+    if (semester) {
+      const cw = calcCurrentWeek(semester);
+      const openSet = new Set(semester.opening_weeks || []);
+      if (openSet.has(cw)) {
+        list.innerHTML = '<div style="background:#EDFAF4;border:1.5px solid var(--green);border-radius:14px;padding:20px 18px;margin-bottom:4px;color:#1a6b4a;font-size:14px;line-height:1.6">🌱 <b>개강 주간</b>입니다.<br>이번 주 출석은 시상 기준에 포함되지 않아요.</div>';
+        return;
+      }
+    }
+    students.forEach(s => {
+      const currentStatus = pendingChanges[s.id] ?? attRecords[s.id] ?? null;
+      const row = document.createElement('div');
+      row.className = 'ch-stu';
+      row.id = `row-${s.id}`;
+      row.innerHTML = `
+        <div class="ch-info">
+          <div class="ch-nm">${s.name}</div>
+          <div class="ch-gr">${s.grade}${s.parent_name ? ' · ' + s.parent_name + ' 부모님' : ''}</div>
+        </div>
+        <div class="ch-opts">
+          <button class="ch-opt${currentStatus==='출석'?' ok':''}" onclick="setStatus('${s.id}','출석')">출석</button>
+          <button class="ch-opt${currentStatus==='지각'?' late':''}" onclick="setStatus('${s.id}','지각')">지각</button>
+          <button class="ch-opt${currentStatus==='결석'?' absent':''}" onclick="setStatus('${s.id}','결석')">결석</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function setStatus(studentId, status) {
+    const current = pendingChanges[studentId] ?? attRecords[studentId] ?? null;
+    if (current === status) {
+      // 같은 버튼 다시 누르면 해제
+      if (pendingChanges[studentId] !== undefined) delete pendingChanges[studentId];
+      else pendingChanges[studentId] = null; // null = clear
+    } else {
+      pendingChanges[studentId] = status;
+    }
+    // 해당 행만 업데이트
+    updateRow(studentId);
+    updateSummary();
+    updateSubtitle();
+  }
+
+  function updateRow(studentId) {
+    const currentStatus = pendingChanges[studentId] !== undefined
+      ? pendingChanges[studentId]
+      : attRecords[studentId] ?? null;
+    const row = document.getElementById(`row-${studentId}`);
+    if (!row) return;
+    const [okBtn, lateBtn, absentBtn] = row.querySelectorAll('.ch-opt');
+    okBtn.className     = 'ch-opt' + (currentStatus === '출석' ? ' ok' : '');
+    lateBtn.className   = 'ch-opt' + (currentStatus === '지각' ? ' late' : '');
+    absentBtn.className = 'ch-opt' + (currentStatus === '결석' ? ' absent' : '');
+  }
+
+  function updateSummary() {
+    let ok = 0, late = 0, absent = 0, none = 0;
+    students.forEach(s => {
+      const st = pendingChanges[s.id] !== undefined
+        ? pendingChanges[s.id]
+        : attRecords[s.id] ?? null;
+      if (st === '출석') ok++;
+      else if (st === '지각') late++;
+      else if (st === '결석') absent++;
+      else none++;
+    });
+    document.getElementById('cnt-ok').textContent = ok;
+    document.getElementById('cnt-late').textContent = late;
+    document.getElementById('cnt-absent').textContent = absent;
+    document.getElementById('cnt-none').textContent = none;
+  }
+
+  async function saveAll() {
+    if (!semester) { showToast('활성 학기가 없습니다'); return; }
+    const toSave = [];
+    const toDelete = []; // student_ids to clear
+    students.forEach(s => {
+      const pending = pendingChanges[s.id];
+      if (pending === undefined) return;
+      if (pending === null) {
+        // 기록 삭제
+        if (attRecords[s.id]) toDelete.push(s.id);
+      } else {
+        toSave.push({ student_id: s.id, semester_id: semester.id, week_num: selectedWeek, status: pending });
+      }
+    });
+    if (!toSave.length && !toDelete.length) { showToast('변경 사항이 없어요'); return; }
+
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    try {
+      if (toSave.length) {
+        const { error } = await sb.from('joyland_attendance').upsert(toSave, {
+          onConflict: 'student_id,semester_id,week_num'
+        });
+        if (error) throw error;
+      }
+      if (toDelete.length) {
+        const { error } = await sb.from('joyland_attendance')
+          .delete()
+          .eq('semester_id', semester.id)
+          .eq('week_num', selectedWeek)
+          .in('student_id', toDelete);
+        if (error) throw error;
+      }
+      // allRecords 동기화
+      toSave.forEach(r => {
+        if (!allRecords[r.student_id]) allRecords[r.student_id] = {};
+        allRecords[r.student_id][selectedWeek] = r.status;
+        attRecords[r.student_id] = r.status;
+      });
+      toDelete.forEach(id => {
+        if (allRecords[id]) delete allRecords[id][selectedWeek];
+        delete attRecords[id];
+      });
+      pendingChanges = {};
+      updateSubtitle();
+      updateSummary();
+      showToast('저장 완료!');
+    } catch (e) {
+      console.error(e);
+      showToast('저장 중 오류가 발생했어요');
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
+
+  function doLogout() {
+    if (Object.keys(pendingChanges).length > 0) {
+      if (!confirm('저장하지 않은 변경사항이 있어요. 나가시겠어요?')) return;
+    }
+    sessionStorage.removeItem('teacherClass');
+    currentClass = null; students = []; attRecords = {}; allRecords = {}; pendingChanges = {};
+    selectedWeek = 1;
+    document.getElementById('chWeekTabs').innerHTML = '';
+    document.body.classList.remove('check-mode');
+    document.getElementById('classPw').value = '';
+    document.getElementById('loginErr').style.display = 'none';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  async function init() {
+    await loadClasses();
+    // 세션 복원
+    const savedClass = sessionStorage.getItem('teacherClass');
+    if (savedClass) {
+      currentClass = savedClass;
+      try { await enterCheckMode(); } catch(e) { sessionStorage.removeItem('teacherClass'); }
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

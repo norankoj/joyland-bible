@@ -42,10 +42,33 @@
     }
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-out {
+      width: 100%; padding: 13px; border-radius: 18px;
+      border: 2px solid var(--bdr); background: none;
+      color: var(--sub); font-size: 14px; font-weight: 700; cursor: pointer;
+      margin-top: 10px; font-family: inherit;
+    }
     .error { background: #FEE2E2; border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #991B1B; text-align: center; margin-bottom: 14px; display: none; }
     .loading { display: none; text-align: center; color: var(--sub); font-size: 14px; margin-bottom: 14px; }
     .admin-link { display: block; text-align: center; margin-top: 20px; font-size: 12px; color: rgba(255,255,255,0.6); text-decoration: none; }
     .admin-link:hover { color: white; }
+
+    /* 자녀 선택 화면 */
+    #selectScreen { display: none; }
+    .sel-title { font-size: 20px; font-weight: 900; text-align: center; color: var(--text); margin-bottom: 6px; }
+    .sel-sub { font-size: 13px; color: var(--sub); text-align: center; margin-bottom: 22px; }
+    #childList { display: flex; gap: 10px; margin-bottom: 10px; }
+    .child-opt {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      flex: 1; padding: 20px 10px;
+      border-radius: 18px; border: 2.5px solid var(--bdr);
+      background: var(--pl); cursor: pointer;
+      text-align: center; font-family: inherit;
+      transition: transform 0.1s;
+    }
+    .child-opt:active { transform: scale(0.97); }
+    .child-opt-nm { font-size: 16px; font-weight: 800; color: var(--text); }
+    .child-opt-gr { font-size: 12px; color: var(--sub); margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -54,16 +77,25 @@
     <div class="title">조이랜드 통독</div>
     <div class="sub">매주 함께 읽는 성경 🌟</div>
 
-    <div class="error" id="error"></div>
-    <div class="loading" id="loading">확인 중...</div>
+    <!-- PIN 입력 화면 -->
+    <div id="pinScreen">
+      <div class="error" id="error"></div>
+      <div class="loading" id="loading">확인 중...</div>
+      <input class="pin-input" id="pinInput" type="tel" inputmode="numeric" maxlength="8" placeholder="••••••••" autocomplete="off"/>
+      <div class="pin-hint">보호자 전화번호 뒤 4자리<br>+ 자녀 생일 4자리 (예: 5678·0305)</div>
+      <button class="btn" id="loginBtn" onclick="login()">로그인</button>
+    </div>
 
-    <input class="pin-input" id="pinInput" type="tel" inputmode="numeric" maxlength="8" placeholder="••••••••" autocomplete="off"/>
-    <div class="pin-hint">보호자 전화번호 뒤 4자리<br>+ 자녀 생일 4자리 (예: 5678·0305)</div>
-
-    <button class="btn" id="loginBtn" onclick="login()">로그인</button>
+    <!-- 자녀 선택 화면 (쌍둥이 등 복수 자녀) -->
+    <div id="selectScreen">
+      <div class="sel-title">어떤 자녀인가요?</div>
+      <div class="sel-sub">같은 PIN으로 등록된 자녀가 있어요</div>
+      <div id="childList"></div>
+      <button class="btn-out" onclick="backToPin()">← 다시 입력</button>
+    </div>
   </div>
-
-  <a class="admin-link" href="admin.html">관리자 페이지 →</a>
+  <a class="admin-link" href="teacher.html">선생님 출석 체크 →</a>
+  <a class="admin-link" href="admin.html" style="margin-top:6px">관리자 →</a>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
@@ -86,21 +118,23 @@
 
       try {
         const { data, error } = await sb
-          .from('students')
-          .select('id, name')
+          .from('joyland_students')
+          .select('id, name, grade')
           .eq('pin', pin)
-          .eq('active', true)
-          .limit(1)
-          .single();
+          .eq('active', true);
 
-        if (error || !data) {
+        if (error || !data || data.length === 0) {
           showError('PIN이 일치하는 학생을 찾을 수 없습니다.\n입력 정보를 다시 확인해주세요.');
           return;
         }
 
-        localStorage.setItem('studentId', data.id);
-        localStorage.setItem('studentName', data.name);
-        window.location.href = 'home.html';
+        if (data.length === 1) {
+          localStorage.setItem('studentId', data[0].id);
+          localStorage.setItem('studentName', data[0].name);
+          window.location.href = 'home.html';
+        } else {
+          showChildSelect(data);
+        }
 
       } catch (e) {
         showError('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
@@ -109,6 +143,33 @@
         btn.disabled = false;
         loadEl.style.display = 'none';
       }
+    }
+
+    function showChildSelect(students) {
+      document.getElementById('pinScreen').style.display = 'none';
+      document.getElementById('selectScreen').style.display = 'block';
+      const list = document.getElementById('childList');
+      list.innerHTML = '';
+      students.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'child-opt';
+        btn.innerHTML = `<div><div class="child-opt-nm">${s.name}</div><div class="child-opt-gr">${s.grade}</div></div>`;
+        btn.onclick = () => selectChild(s.id, s.name);
+        list.appendChild(btn);
+      });
+    }
+
+    function selectChild(id, name) {
+      localStorage.setItem('studentId', id);
+      localStorage.setItem('studentName', name);
+      window.location.href = 'home.html';
+    }
+
+    function backToPin() {
+      document.getElementById('selectScreen').style.display = 'none';
+      document.getElementById('pinScreen').style.display = 'block';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('error').style.display = 'none';
     }
 
     function showError(msg) {
