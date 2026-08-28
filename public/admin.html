@@ -215,6 +215,22 @@
       #attScroll  { max-height:calc(100vh - 320px); }
     }
 
+    /* ── 출석 셀 인라인 편집 ── */
+    .att-cell { cursor:pointer; transition:background .12s; }
+    .att-cell:hover { background:rgba(123,79,232,.10); }
+    .att-pop {
+      position:fixed; z-index:2000; background:var(--bg);
+      border:1px solid var(--bdr); border-radius:12px; padding:6px;
+      box-shadow:0 10px 32px rgba(0,0,0,.18); display:flex; flex-direction:column; gap:3px; min-width:118px;
+    }
+    .att-pop-t { font-size:11px; color:var(--sub); font-weight:700; padding:4px 8px 6px; border-bottom:1px solid var(--bdr); margin-bottom:3px; }
+    .att-pop button {
+      border:none; background:none; font-family:inherit; font-size:13px; font-weight:700;
+      padding:8px 10px; border-radius:8px; cursor:pointer; text-align:left; color:var(--text);
+    }
+    .att-pop button:hover { background:var(--surface); }
+    .att-pop button.on { background:var(--pl); color:var(--pd); }
+
     /* ── 모바일: 반별 현황 테이블 → 카드 ── */
     @media (max-width:640px) {
       .cls-tbl thead { display:none; }
@@ -340,7 +356,8 @@
       <div class="pg-t">출석 현황</div>
       <div class="pg-s" id="attSub"></div>
       <div class="stat-row" id="attStatRow"></div>
-      <div style="font-size:15px;font-weight:800;margin-bottom:10px">주차별 출석 현황</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">주차별 출석 현황</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">✏️ 표의 출석 칸을 클릭하면 출석·지각·결석을 바로 수정할 수 있습니다. (모임 후 지각 보정용)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
         <div style="position:relative;flex:1;min-width:160px">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1298,7 +1315,12 @@
     rows.forEach(({ s, recs, rate }) => {
       let tds = '';
       for (let w = 1; w <= totalWeeks; w++) {
-        tds += `<td>${badgeHtml(recs[w], breakSet.has(w), openSet.has(w), closeSet.has(w), w > currentWeek)}</td>`;
+        const isSpecial = breakSet.has(w) || openSet.has(w) || closeSet.has(w);
+        const editable = !isSpecial && w <= currentWeek;
+        const cellAttr = editable
+          ? ` class="att-cell" title="클릭해서 출석 상태 변경" onclick="openAttEditor(event,'${s.id}',${w})"`
+          : '';
+        tds += `<td${cellAttr}>${badgeHtml(recs[w], breakSet.has(w), openSet.has(w), closeSet.has(w), w > currentWeek)}</td>`;
       }
       tbHtml += `<tr>
         <td style="font-weight:700;white-space:nowrap">${s.name}</td>
@@ -1309,6 +1331,75 @@
       </tr>`;
     });
     document.getElementById('attTbody').innerHTML = tbHtml || '<tr><td colspan="100" style="text-align:center;padding:24px;color:var(--sub)">검색 결과 없음</td></tr>';
+  }
+
+  // ── 출석 인라인 편집 (디렉터가 모임 후 지각 등을 보정) ──
+  let attPopEl = null;
+
+  function closeAttEditor() {
+    if (attPopEl) { attPopEl.remove(); attPopEl = null; }
+    document.removeEventListener('click', outsideAttPop, true);
+  }
+
+  function outsideAttPop(e) {
+    if (attPopEl && !attPopEl.contains(e.target) && !e.target.closest('.att-cell')) closeAttEditor();
+  }
+
+  function openAttEditor(evt, studentId, week) {
+    evt.stopPropagation();
+    closeAttEditor();
+    const stu = students.find(s => s.id === studentId);
+    const cur = attData[studentId]?.[week] || null;
+
+    const pop = document.createElement('div');
+    pop.className = 'att-pop';
+    const opts = [['출석','출석'], ['지각','지각'], ['결석','결석'], [null,'기록 지우기']];
+    pop.innerHTML = `<div class="att-pop-t">${stu ? stu.name : ''} · ${week}주차</div>` +
+      opts.map(([v,label]) =>
+        `<button class="${cur===v?'on':''}" data-v="${v===null?'':v}">${label}${cur===v?' ✓':''}</button>`
+      ).join('');
+    document.body.appendChild(pop);
+
+    // 화면 밖으로 나가지 않도록 위치 보정
+    const r = evt.currentTarget.getBoundingClientRect();
+    const pr = pop.getBoundingClientRect();
+    pop.style.left = Math.min(r.left, window.innerWidth  - pr.width  - 8) + 'px';
+    pop.style.top  = (r.bottom + pr.height > window.innerHeight ? r.top - pr.height - 4 : r.bottom + 4) + 'px';
+
+    pop.querySelectorAll('button').forEach(b => {
+      b.onclick = ev => { ev.stopPropagation(); saveAttCell(studentId, week, b.dataset.v || null); };
+    });
+    attPopEl = pop;
+    setTimeout(() => document.addEventListener('click', outsideAttPop, true), 0);
+  }
+
+  async function saveAttCell(studentId, week, status) {
+    closeAttEditor();
+    if (!semester) return;
+    const prev = attData[studentId]?.[week] || null;
+    if (prev === status) return;
+    loading(true);
+    try {
+      if (status === null) {
+        const { error } = await sb.from('joyland_attendance').delete()
+          .eq('semester_id', semester.id).eq('week_num', week).eq('student_id', studentId);
+        if (error) throw error;
+        if (attData[studentId]) delete attData[studentId][week];
+      } else {
+        const { error } = await sb.from('joyland_attendance').upsert({
+          student_id: studentId, semester_id: semester.id, week_num: week, status
+        }, { onConflict: 'student_id,semester_id,week_num' });
+        if (error) throw error;
+        if (!attData[studentId]) attData[studentId] = {};
+        attData[studentId][week] = status;
+      }
+      renderAttendance();
+      renderAwards();
+      showToast(status ? `${week}주차 ${status} 저장` : `${week}주차 기록 삭제`);
+    } catch (e) {
+      console.error(e);
+      showToast('저장 실패: 권한을 확인해주세요');
+    } finally { loading(false); }
   }
 
   // ── 시상 ──

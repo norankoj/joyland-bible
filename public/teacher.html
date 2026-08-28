@@ -169,6 +169,69 @@
 
     .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1E1248; color: white; padding: 12px 24px; border-radius: 99px; font-size: 14px; font-weight: 700; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; z-index: 999; }
     .toast.show { opacity: 1; }
+    /* ── 모드 탭 (출석 / 명단) ── */
+    .mode-tabs { display:flex; gap:4px; margin-top:12px; background:#F4F1FF; border-radius:12px; padding:4px; }
+    .mode-tab {
+      flex:1; padding:9px 10px; border:none; border-radius:9px; background:none;
+      font-family:inherit; font-size:13px; font-weight:700; color:var(--sub); cursor:pointer; transition:all .15s;
+    }
+    .mode-tab.active { background:white; color:var(--p); box-shadow:0 1px 6px rgba(107,63,216,.14); }
+
+    /* ── 명단 관리 ── */
+    .rs-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 28px 10px; }
+    .rs-count { font-size:13px; font-weight:700; color:var(--sub); }
+    .rs-add {
+      border:none; border-radius:99px; padding:9px 15px; cursor:pointer; font-family:inherit;
+      font-size:13px; font-weight:800; color:white; background:linear-gradient(135deg,#7B4FE8,#9F75FF);
+    }
+    .rs-add:active { transform:scale(.96); }
+    .rs-notice { margin:0 28px 10px; padding:12px 14px; border-radius:12px; background:#FFF7E8; border:1px solid #FFE0A3; color:#8A6100; font-size:12.5px; line-height:1.6; }
+    .rs-stu { display:flex; align-items:center; gap:10px; padding:14px 28px; border-bottom:1px solid #F0EBFF; }
+    .rs-stu.off { opacity:.5; }
+    .rs-inf { flex:1; min-width:0; }
+    .rs-nm { font-size:14px; font-weight:700; color:var(--text); }
+    .rs-meta { font-size:11px; color:var(--sub); margin-top:2px; word-break:break-all; }
+    .rs-btns { display:flex; gap:5px; flex-shrink:0; }
+    .rs-btn {
+      border:1.5px solid var(--bdr); background:none; border-radius:99px; padding:7px 11px;
+      font-family:inherit; font-size:11px; font-weight:700; color:var(--sub); cursor:pointer; white-space:nowrap;
+    }
+    .rs-btn:active { transform:scale(.93); }
+    .rs-btn.edit { color:var(--p); border-color:#D9CCFF; }
+    .rs-btn.del  { color:var(--red); border-color:#FBD5D5; }
+
+    .rs-overlay {
+      position:fixed; inset:0; background:rgba(30,18,72,.45); z-index:900;
+      display:none; align-items:flex-end; justify-content:center;
+    }
+    .rs-overlay.show { display:flex; }
+    .rs-sheet {
+      background:white; width:100%; max-width:520px; border-radius:24px 24px 0 0;
+      padding:24px 22px calc(24px + env(safe-area-inset-bottom)); max-height:92vh; overflow-y:auto;
+    }
+    @media (min-width:560px) { .rs-overlay { align-items:center; } .rs-sheet { border-radius:24px; } }
+    .rs-sheet-t { font-size:18px; font-weight:900; color:var(--text); margin-bottom:16px; }
+    .rs-err { display:none; background:#FEE2E2; color:#991B1B; border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; line-height:1.5; }
+    .rs-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .rs-grid > div:nth-child(5) { grid-column:1 / -1; }
+    .rs-lbl { font-size:11px; font-weight:700; color:var(--sub); margin-bottom:5px; }
+    .rs-fld {
+      width:100%; padding:12px 13px; border:2px solid var(--bdr); border-radius:13px;
+      font-size:14px; font-family:inherit; color:var(--text); background:#F8F6FF; outline:none;
+    }
+    .rs-fld:focus { border-color:var(--p); background:var(--pl); }
+    .rs-hint { font-size:11px; color:var(--sub); margin:10px 2px 0; line-height:1.6; }
+    .rs-actions { display:flex; gap:8px; margin-top:18px; }
+    .rs-save {
+      flex:1; padding:14px; border:none; border-radius:15px; cursor:pointer; font-family:inherit;
+      font-size:15px; font-weight:800; color:white; background:linear-gradient(135deg,#7B4FE8,#9F75FF);
+    }
+    .rs-save:disabled { opacity:.6; cursor:not-allowed; }
+    .rs-cancel {
+      padding:14px 20px; border:2px solid var(--bdr); border-radius:15px; background:none;
+      font-family:inherit; font-size:14px; font-weight:700; color:var(--sub); cursor:pointer;
+    }
+
     /* ── 주차 탭 ── */
     .wk-tabs { display:flex; gap:6px; padding:10px 20px; overflow-x:auto; background:white; border-bottom:1px solid #F0EBFF; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
     .wk-tabs::-webkit-scrollbar { display:none; }
@@ -232,17 +295,63 @@
         <button class="logout-sm" onclick="doLogout()">나가기</button>
       </div>
       <div class="ch-sub" id="chSub"></div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="mt-att"    onclick="switchMode('att')">출석 체크</button>
+        <button class="mode-tab"        id="mt-roster" onclick="switchMode('roster')">우리 반 명단</button>
+      </div>
     </div>
-    <div class="wk-tabs" id="chWeekTabs"></div>
-    <div class="ch-summary" id="chSummary">
-      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-ok" style="color:var(--green)">0</div><div class="ch-sum-l">출석</div></div>
-      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-late" style="color:var(--orange)">0</div><div class="ch-sum-l">지각</div></div>
-      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-absent" style="color:var(--red)">0</div><div class="ch-sum-l">결석</div></div>
-      <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-none" style="color:var(--sub)">0</div><div class="ch-sum-l">미처리</div></div>
+
+    <!-- 출석 체크 모드 -->
+    <div id="modeAtt">
+      <div class="wk-tabs" id="chWeekTabs"></div>
+      <div class="ch-summary" id="chSummary">
+        <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-ok" style="color:var(--green)">0</div><div class="ch-sum-l">출석</div></div>
+        <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-late" style="color:var(--orange)">0</div><div class="ch-sum-l">지각</div></div>
+        <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-absent" style="color:var(--red)">0</div><div class="ch-sum-l">결석</div></div>
+        <div class="ch-sum-c"><div class="ch-sum-n" id="cnt-none" style="color:var(--sub)">0</div><div class="ch-sum-l">미처리</div></div>
+      </div>
+      <div class="ch-list" id="chList"></div>
+      <div class="ch-save-bar">
+        <button class="ch-save-btn" id="saveBtn" onclick="saveAll()">저장하기</button>
+      </div>
     </div>
-    <div class="ch-list" id="chList"></div>
-    <div class="ch-save-bar">
-      <button class="ch-save-btn" id="saveBtn" onclick="saveAll()">저장하기</button>
+
+    <!-- 명단 관리 모드 -->
+    <div id="modeRoster" style="display:none">
+      <div class="rs-bar">
+        <div class="rs-count" id="rsCount"></div>
+        <button class="rs-add" onclick="openStuForm(null)">＋ 학생 추가</button>
+      </div>
+      <div id="rsNotice" class="rs-notice" style="display:none"></div>
+      <div class="ch-list" id="rsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 학생 등록/수정 시트 -->
+<div class="rs-overlay" id="stuOverlay" onclick="hideStuForm(event)">
+  <div class="rs-sheet" onclick="event.stopPropagation()">
+    <div class="rs-sheet-t" id="stuFormTitle">학생 추가</div>
+    <div class="rs-err" id="stuFormErr"></div>
+    <div class="rs-grid">
+      <div><div class="rs-lbl">이름 *</div><input class="rs-fld" id="fName" placeholder="김조이"></div>
+      <div><div class="rs-lbl">학년 *</div>
+        <select class="rs-fld" id="fGrade">
+          <option>1학년</option><option>2학년</option><option>3학년</option>
+          <option>4학년</option><option>5학년</option><option>6학년</option>
+        </select>
+      </div>
+      <div><div class="rs-lbl">성별</div>
+        <select class="rs-fld" id="fGender"><option>남학생</option><option>여학생</option></select>
+      </div>
+      <div><div class="rs-lbl">보호자 성함</div><input class="rs-fld" id="fParent" placeholder="김보호"></div>
+      <div><div class="rs-lbl">보호자 전화번호 *</div><input class="rs-fld" id="fPhone" inputmode="tel" placeholder="010-1234-5678"></div>
+      <div><div class="rs-lbl">생일 (MMDD) *</div><input class="rs-fld" id="fBirth" inputmode="numeric" maxlength="4" placeholder="0305"></div>
+    </div>
+    <div class="rs-hint">로그인 PIN = 전화 뒤 4자리 + 생일 4자리로 자동 생성됩니다.</div>
+    <div class="rs-actions">
+      <button class="rs-save" id="stuFormSave" onclick="saveStuForm()">저장</button>
+      <button class="rs-cancel" onclick="closeStuForm()">취소</button>
     </div>
   </div>
 </div>
@@ -258,6 +367,11 @@
   let pendingChanges = {};
   let selectedClass = '';
   let selectedWeek = 1;
+  let classPw = '';            // 명단 수정 RPC 검증용 (세션 한정)
+  let rosterStudents = [];     // 연락처 포함 전체 명단 (비활성 포함)
+  let rosterAvailable = false; // RPC 배포 여부
+  let currentMode = 'att';
+  let editingStuId = null;
 
   // 공통 유틸은 js/config.js 참조
   const weekCheckDate = (sem, w) => fmtLongDate(weekCheckDateObj(sem, w));
@@ -339,7 +453,9 @@
       }
 
       currentClass = className;
+      classPw = pw; // 명단 수정 RPC 검증용 — 탭을 닫으면 사라집니다
       sessionStorage.setItem('teacherClass', className);
+      sessionStorage.setItem('teacherPw', pw);
       await enterCheckMode();
     } catch (e) {
       showErr('오류가 발생했습니다. 다시 시도해주세요.');
@@ -392,7 +508,8 @@
 
     // UI 전환
     document.body.classList.add('check-mode');
-    document.getElementById('chTitle').textContent = `${currentClass} 출석 체크`;
+    document.getElementById('chTitle').textContent = currentClass;
+    switchModeSilent('att');
     buildWeekTabs();
     updateSubtitle();
     renderStudents();
@@ -634,17 +751,186 @@
     }
   }
 
+  // ─────────────────────────────────────────
+  // 우리 반 명단 관리
+  // ─────────────────────────────────────────
+  function switchMode(mode) {
+    if (mode === currentMode) return;
+    if (mode === 'roster' && Object.keys(pendingChanges).length > 0) {
+      if (!confirm('저장하지 않은 출석 변경사항이 있어요. 이동하면 사라져요. 이동할까요?')) return;
+      pendingChanges = {};
+      updateSubtitle(); renderStudents(); updateSummary();
+    }
+    currentMode = mode;
+    document.getElementById('mt-att').classList.toggle('active', mode === 'att');
+    document.getElementById('mt-roster').classList.toggle('active', mode === 'roster');
+    document.getElementById('modeAtt').style.display    = mode === 'att' ? '' : 'none';
+    document.getElementById('modeRoster').style.display = mode === 'roster' ? '' : 'none';
+    if (mode === 'roster') loadRoster();
+  }
+
+  async function loadRoster() {
+    const notice = document.getElementById('rsNotice');
+    const { data, error } = await sb.rpc('joyland_class_students', {
+      p_class: currentClass, p_password: classPw
+    });
+    if (error) {
+      // RPC 미배포 — 조회만 가능한 축소 모드
+      rosterAvailable = false;
+      const { data: fallback } = await sb.from('joyland_students')
+        .select('id, name, grade, parent_name, active')
+        .eq('class_name', currentClass).order('grade').order('name');
+      rosterStudents = fallback || [];
+      notice.style.display = 'block';
+      notice.innerHTML = '⚠️ 명단 수정 기능이 아직 활성화되지 않았어요.<br>관리자에게 <b>supabase/add_teacher_roster.sql</b> 실행을 요청해주세요. (지금은 보기만 가능합니다)';
+    } else {
+      rosterAvailable = true;
+      rosterStudents = data || [];
+      notice.style.display = 'none';
+    }
+    renderRoster();
+  }
+
+  function renderRoster() {
+    const list = document.getElementById('rsList');
+    const activeCnt = rosterStudents.filter(s => s.active).length;
+    document.getElementById('rsCount').textContent =
+      `재적 ${activeCnt}명${rosterStudents.length > activeCnt ? ` · 비활성 ${rosterStudents.length - activeCnt}명` : ''}`;
+    document.getElementById('rsCount').nextElementSibling.style.display = rosterAvailable ? '' : 'none';
+
+    if (!rosterStudents.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:14px">등록된 학생이 없어요</div>';
+      return;
+    }
+    list.innerHTML = rosterStudents.map(s => {
+      const meta = [s.grade, s.parent_name ? s.parent_name + ' 부모님' : null, s.phone]
+        .filter(Boolean).join(' · ');
+      const btns = rosterAvailable ? `
+        <div class="rs-btns">
+          <button class="rs-btn edit" onclick="openStuForm('${s.id}')">수정</button>
+          <button class="rs-btn ${s.active ? 'del' : ''}" onclick="toggleStuActive('${s.id}',${!s.active})">${s.active ? '제외' : '복원'}</button>
+        </div>` : '';
+      return `<div class="rs-stu ${s.active ? '' : 'off'}">
+        <div class="rs-inf">
+          <div class="rs-nm">${esc(s.name)}${s.active ? '' : ' <span style="font-size:10px;color:var(--sub)">(비활성)</span>'}</div>
+          <div class="rs-meta">${esc(meta)}</div>
+        </div>${btns}
+      </div>`;
+    }).join('');
+  }
+
+  function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  function openStuForm(id) {
+    if (!rosterAvailable) { showToast('명단 수정 기능이 아직 활성화되지 않았어요'); return; }
+    editingStuId = id;
+    const s = id ? rosterStudents.find(x => x.id === id) : null;
+    document.getElementById('stuFormTitle').textContent = s ? `${s.name} 정보 수정` : '학생 추가';
+    document.getElementById('fName').value   = s?.name || '';
+    document.getElementById('fGrade').value  = s?.grade || '1학년';
+    document.getElementById('fGender').value = s?.gender || '남학생';
+    document.getElementById('fParent').value = s?.parent_name || '';
+    document.getElementById('fPhone').value  = s?.phone || '';
+    document.getElementById('fBirth').value  = s?.birthday || '';
+    document.getElementById('stuFormErr').style.display = 'none';
+    document.getElementById('stuOverlay').classList.add('show');
+  }
+
+  function closeStuForm() {
+    document.getElementById('stuOverlay').classList.remove('show');
+    editingStuId = null;
+  }
+  function hideStuForm(e) { if (e.target === document.getElementById('stuOverlay')) closeStuForm(); }
+
+  async function saveStuForm() {
+    const errEl = document.getElementById('stuFormErr');
+    const btn = document.getElementById('stuFormSave');
+    const name  = document.getElementById('fName').value.trim();
+    const birth = document.getElementById('fBirth').value.trim();
+    const phone = document.getElementById('fPhone').value.trim();
+
+    errEl.style.display = 'none';
+    if (!name)  { showFormErr('이름을 입력해주세요.'); return; }
+    if (phone.replace(/[^0-9]/g, '').length < 4) { showFormErr('보호자 전화번호를 정확히 입력해주세요.'); return; }
+    if (!/^\d{4}$/.test(birth)) { showFormErr('생일은 MMDD 4자리로 입력해주세요. (예: 0305)'); return; }
+
+    btn.disabled = true;
+    try {
+      const { error } = await sb.rpc('joyland_class_save_student', {
+        p_class: currentClass, p_password: classPw,
+        p_id: editingStuId, p_name: name,
+        p_grade: document.getElementById('fGrade').value,
+        p_gender: document.getElementById('fGender').value,
+        p_phone: phone, p_birthday: birth,
+        p_parent_name: document.getElementById('fParent').value.trim() || null
+      });
+      if (error) { showFormErr(error.message || '저장에 실패했어요.'); return; }
+      closeStuForm();
+      await loadRoster();
+      await reloadClassStudents();
+      showToast(editingStuId ? '수정 완료!' : '학생이 추가됐어요!');
+    } catch (e) {
+      console.error(e);
+      showFormErr('저장 중 오류가 발생했어요.');
+    } finally { btn.disabled = false; }
+  }
+
+  function showFormErr(msg) {
+    const el = document.getElementById('stuFormErr');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  async function toggleStuActive(id, makeActive) {
+    const s = rosterStudents.find(x => x.id === id);
+    if (!confirm(makeActive
+      ? `${s.name} 학생을 명단에 복원할까요?`
+      : `${s.name} 학생을 명단에서 제외할까요?\n(출석 기록은 보존되며 언제든 복원할 수 있어요)`)) return;
+    const { error } = await sb.rpc('joyland_class_set_active', {
+      p_class: currentClass, p_password: classPw, p_id: id, p_active: makeActive
+    });
+    if (error) { showToast(error.message || '변경에 실패했어요'); return; }
+    await loadRoster();
+    await reloadClassStudents();
+    showToast(makeActive ? '복원했어요' : '명단에서 제외했어요');
+  }
+
+  /** 명단 변경 후 출석 체크 화면의 학생 목록 갱신 */
+  async function reloadClassStudents() {
+    const { data: stus } = await sb.from('joyland_students')
+      .select('id, name, grade, parent_name')
+      .eq('class_name', currentClass).eq('active', true)
+      .order('grade').order('name');
+    students = stus || [];
+    loadSelectedWeekRecords();
+    renderStudents();
+    updateSummary();
+  }
+
   function doLogout() {
     if (Object.keys(pendingChanges).length > 0) {
       if (!confirm('저장하지 않은 변경사항이 있어요. 나가시겠어요?')) return;
     }
     sessionStorage.removeItem('teacherClass');
+    sessionStorage.removeItem('teacherPw');
     currentClass = null; students = []; attRecords = {}; allRecords = {}; pendingChanges = {};
-    selectedWeek = 1;
+    selectedWeek = 1; classPw = ''; rosterStudents = []; rosterAvailable = false;
     document.getElementById('chWeekTabs').innerHTML = '';
     document.body.classList.remove('check-mode');
     document.getElementById('classPw').value = '';
     document.getElementById('loginErr').style.display = 'none';
+    switchModeSilent('att');
+  }
+
+  /** 확인창 없이 모드만 되돌림 (로그아웃/입장 시) */
+  function switchModeSilent(mode) {
+    currentMode = mode;
+    document.getElementById('mt-att').classList.toggle('active', mode === 'att');
+    document.getElementById('mt-roster').classList.toggle('active', mode === 'roster');
+    document.getElementById('modeAtt').style.display    = mode === 'att' ? '' : 'none';
+    document.getElementById('modeRoster').style.display = mode === 'roster' ? '' : 'none';
   }
 
   function showToast(msg) {
@@ -659,7 +945,9 @@
     const savedClass = sessionStorage.getItem('teacherClass');
     if (savedClass) {
       currentClass = savedClass;
-      try { await enterCheckMode(); } catch(e) { sessionStorage.removeItem('teacherClass'); }
+      classPw = sessionStorage.getItem('teacherPw') || '';
+      try { await enterCheckMode(); }
+      catch(e) { sessionStorage.removeItem('teacherClass'); sessionStorage.removeItem('teacherPw'); }
     }
   }
 

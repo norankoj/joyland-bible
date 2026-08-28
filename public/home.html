@@ -68,6 +68,12 @@
     .stamp.locked { background: #EDEBF8; color: #A89ED4; border: 2px solid #D5CFF4; }
     .stamp.missed { background: #F5F3FF; color: #C4BBE8; }
     .stamp.future { background: #EDEBF8; color: #B0A8D4; }
+    /* 방학·개강·종강 주간 — 체크 대상 아님 */
+    .stamp.special {
+      background: repeating-linear-gradient(45deg, #F7F5FF, #F7F5FF 5px, #EFEBFC 5px, #EFEBFC 10px);
+      color: #9C93C4; border: 1.5px dashed #CFC7EE; cursor: default;
+    }
+    .stamp-tag { font-size: 9px; font-weight: 800; margin-top: 2px; letter-spacing: .02em; }
     @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(123,79,232,0.3)} 50%{box-shadow:0 0 0 8px rgba(123,79,232,0)} }
 
     .hist-item { display: flex; align-items: center; padding: 13px 0; border-bottom: 1px solid #F0EBFF; gap: 12px; }
@@ -250,6 +256,13 @@
   const getCheckDate     = weekCheckDateObj;
   const fmtDate          = fmtShortDate;
 
+  function specialWeekLabel(w) {
+    if (!semester) return '';
+    if ((semester.opening_weeks || []).includes(w)) return '개강';
+    if ((semester.closing_weeks || []).includes(w)) return '종강';
+    return '방학';
+  }
+
   function weekRange(sem, w) {
     const tue = getCheckDate(sem, w);
     const wed = new Date(tue); wed.setUTCDate(tue.getUTCDate() - 6);
@@ -318,7 +331,10 @@
 
     // 화요일 배너 / 잠금
     currentCheckWeek = currentWeek;
-    const showsBanner = isTue && currentWeek >= 1 && currentWeek <= totalWeeks;
+    const specialSet = specialWeekSet(semester);
+    const isSpecialNow = specialSet.has(currentWeek);
+    const inSemester = currentWeek >= 1 && currentWeek <= totalWeeks;
+    const showsBanner = isTue && inSemester && !isSpecialNow;
     if (showsBanner) {
       const alreadyChecked = !!weekRecords[currentWeek];
       document.getElementById('tueBanner').style.display = 'flex';
@@ -328,20 +344,27 @@
         ? `${weekRecords[currentWeek] === 'done' ? '완료' : '부분완료'}로 기록됨 · 수정 가능`
         : '오늘 자정(24:00)까지';
       document.getElementById('checkBtn').textContent = alreadyChecked ? '수정' : '체크';
+    } else if (isSpecialNow && inSemester) {
+      // 방학·개강·종강 주간 안내
+      const lock = document.getElementById('lockNotice');
+      lock.style.display = 'flex';
+      document.getElementById('lockTitle').textContent = `이번 주는 ${specialWeekLabel(currentWeek)} 주간이에요`;
+      document.getElementById('nextCheckLabel').textContent = '통독 체크는 쉬어갑니다';
     } else if (!isTue) {
       document.getElementById('lockNotice').style.display = 'flex';
       document.getElementById('nextCheckLabel').textContent = nextTuesdayLabel();
     }
 
-    // 자녀 카드
+    // 자녀 카드 (방학·개강·종강 주차는 진행률에서 제외)
+    const targetWeeks = Math.max(totalWeeks - specialSet.size, 0);
     document.getElementById('childName').textContent = student.name;
     document.getElementById('childGrade').textContent =
       semester ? `${student.grade} · ${semester.year}년 ${semester.semester}학기` : student.grade;
-    document.getElementById('progressLabel').textContent = `${checkedCount} / ${totalWeeks}주 완료`;
-    document.getElementById('progressBar').style.width = totalWeeks > 0 ? `${(checkedCount/totalWeeks)*100}%` : '0%';
+    document.getElementById('progressLabel').textContent = `${checkedCount} / ${targetWeeks}주 완료`;
+    document.getElementById('progressBar').style.width = targetWeeks > 0 ? `${(checkedCount/targetWeeks)*100}%` : '0%';
 
     // 도장판
-    if (isTue && currentWeek >= 1 && currentWeek <= totalWeeks && !weekRecords[currentWeek]) {
+    if (showsBanner && !weekRecords[currentWeek]) {
       const hint = document.getElementById('stampHint');
       hint.textContent = `${currentWeek}주차 도장을 눌러 체크하세요`;
       hint.style.display = 'block';
@@ -354,11 +377,21 @@
     const grid = document.getElementById('stampGrid');
     grid.innerHTML = '';
     const now = new Date();
+    const specialSet = specialWeekSet(semester);
     for (let w = 1; w <= totalWeeks; w++) {
       const div = document.createElement('div');
       div.className = 'stamp';
       const status = weekRecords[w];
       const checkDate = semester ? getCheckDate(semester, w) : null;
+
+      // 방학·개강·종강 주차는 통독 체크 대상이 아님
+      if (specialSet.has(w)) {
+        div.classList.add('special');
+        div.title = specialWeekLabel(w) + ' 주간 · 통독 체크 없음';
+        div.innerHTML = `<div class="stamp-wk">${w}주</div><div class="stamp-tag">${specialWeekLabel(w)}</div>`;
+        grid.appendChild(div);
+        continue;
+      }
 
       if (status) {
         div.classList.add(status);
@@ -400,7 +433,8 @@
       const range = semester ? weekRange(semester, w) : '';
       const checkDate = semester ? fmtDate(getCheckDate(semester, w)) : '';
       let statusHtml = '미체크', statusClass = 'missed';
-      if (status === 'done') { statusHtml = '완료'; statusClass = 'done'; }
+      if (specialWeekSet(semester).has(w)) { statusHtml = specialWeekLabel(w); statusClass = 'missed'; }
+      else if (status === 'done') { statusHtml = '완료'; statusClass = 'done'; }
       else if (status === 'partial') { statusHtml = '부분완료'; statusClass = 'partial'; }
       const div = document.createElement('div');
       div.className = 'hist-item';
@@ -416,6 +450,12 @@
   }
 
   function openSheet(weekNum) {
+    // 방학·개강·종강 주차는 체크 대상이 아님 (UI 우회 방지)
+    if (specialWeekSet(semester).has(weekNum)) {
+      showToast(`${specialWeekLabel(weekNum)} 주간은 통독 체크를 하지 않아요`);
+      return;
+    }
+    if (!isTuesdayKST()) { showToast(`통독 체크는 ${CHECK_DAY_LABEL}요일에만 가능해요`); return; }
     checkingWeek = weekNum;
     const isEdit = !!weekRecords[weekNum];
     document.getElementById('sheetTitle').textContent = `${weekNum}주차 통독 ${isEdit ? '수정' : '체크'}`;
