@@ -259,12 +259,8 @@
   let selectedClass = '';
   let selectedWeek = 1;
 
-  function weekCheckDate(sem, w) {
-    const d = new Date(sem.first_check_date + 'T00:00:00Z');
-    d.setUTCDate(d.getUTCDate() + (w - 1) * 7);
-    const days = ['일','월','화','수','목','금','토'];
-    return `${d.getUTCMonth()+1}월 ${d.getUTCDate()}일(${days[d.getUTCDay()]})`;
-  }
+  // 공통 유틸은 js/config.js 참조
+  const weekCheckDate = (sem, w) => fmtLongDate(weekCheckDateObj(sem, w));
 
   async function loadClasses() {
     const { data } = await sb.from('joyland_classes').select('name').order('name');
@@ -398,11 +394,7 @@
   }
 
   function calcCurrentWeek(sem) {
-    const kst = new Date(Date.now() + 9 * 3600000);
-    const first = new Date(sem.first_check_date + 'T00:00:00Z');
-    const diff = kst - first;
-    if (diff < 0) return 1;
-    return Math.min(Math.floor(diff / (7 * 86400000)) + 1, sem.total_weeks);
+    return Math.min(Math.max(calcWeekNum(sem), 1), sem.total_weeks);
   }
 
   function isOpeningWeek() {
@@ -433,10 +425,7 @@
       const isClose   = closeSet.has(w);
       const isFuture  = w > currentWeek;
       const isActive  = w === selectedWeek;
-      const d = new Date(semester.first_check_date + 'T00:00:00Z');
-      d.setUTCDate(d.getUTCDate() + (w - 1) * 7);
-      const days = ['일','월','화','수','목','금','토'];
-      const shortDate = `${d.getUTCMonth()+1}/${d.getUTCDate()}(${days[d.getUTCDay()]})`;
+      const shortDate = fmtShortDate(weekCheckDateObj(semester, w));
       const tag = isOpenW ? '개강' : isBreak ? '방학' : isClose ? '종강' : '';
       let cls = 'wk-tab';
       if (isActive) cls += ' active';
@@ -605,12 +594,17 @@
         if (error) throw error;
       }
       if (toDelete.length) {
-        const { error } = await sb.from('joyland_attendance')
+        const { data: removed, error } = await sb.from('joyland_attendance')
           .delete()
           .eq('semester_id', semester.id)
           .eq('week_num', selectedWeek)
-          .in('student_id', toDelete);
+          .in('student_id', toDelete)
+          .select('id');
         if (error) throw error;
+        // RLS 로 삭제가 막히면 오류 없이 0건이 반환되므로 명시적으로 확인
+        if (!removed || removed.length === 0) {
+          throw new Error('삭제 권한이 없습니다. supabase/fix_attendance_delete.sql 을 실행해주세요.');
+        }
       }
       // allRecords 동기화
       toSave.forEach(r => {
@@ -628,7 +622,7 @@
       showToast('저장 완료!');
     } catch (e) {
       console.error(e);
-      showToast('저장 중 오류가 발생했어요');
+      showToast(e.message && e.message.includes('삭제 권한') ? e.message : '저장 중 오류가 발생했어요');
     } finally {
       saveBtn.disabled = false;
     }

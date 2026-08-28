@@ -158,7 +158,7 @@
     </div>
 
     <div class="lock-notice" id="lockNotice" style="display:none">
-      <div class="lt">체크는 목요일에만 가능해요</div>
+      <div class="lt" id="lockTitle">체크는 정해진 요일에만 가능해요</div>
       <div class="ls" id="nextCheckLabel"></div>
     </div>
 
@@ -243,39 +243,12 @@
 <script>
   let student = null, semester = null, weekRecords = {}, attRecords = {}, checkingWeek = null, currentCheckWeek = 0;
 
-  function isTuesdayKST() {
-    const kst = new Date(Date.now() + 9 * 3600000);
-    return kst.getUTCDay() === 4; // 목요일
-  }
-
-  function nextTuesdayLabel() {
-    const kst = new Date(Date.now() + 9 * 3600000);
-    const day = kst.getUTCDay();
-    const daysUntil = (4 - day + 7) % 7 || 7;
-    const next = new Date(kst);
-    next.setUTCDate(kst.getUTCDate() + daysUntil);
-    return `다음 체크일: ${next.getUTCMonth()+1}월 ${next.getUTCDate()}일(목)`;
-  }
-
-  function calcCurrentWeek(sem) {
-    const kst = new Date(Date.now() + 9 * 3600000);
-    const first = new Date(sem.first_check_date + 'T00:00:00Z');
-    const diff = kst - first;
-    if (diff < 0) return 0;
-    return Math.floor(diff / (7 * 86400000)) + 1;
-  }
-
-  function getCheckDate(sem, weekNum) {
-    const first = new Date(sem.first_check_date + 'T00:00:00Z');
-    const d = new Date(first);
-    d.setUTCDate(first.getUTCDate() + (weekNum - 1) * 7);
-    return d;
-  }
-
-  function fmtDate(d) {
-    const days = ['일','월','화','수','목','금','토'];
-    return `${d.getUTCMonth()+1}/${d.getUTCDate()}(${days[d.getUTCDay()]})`;
-  }
+  // 공통 유틸은 js/config.js 참조 (CHECK_DAY 한 곳에서 요일 관리)
+  const isTuesdayKST   = isCheckDayKST;
+  const nextTuesdayLabel = nextCheckDayLabel;
+  const calcCurrentWeek  = calcWeekNum;
+  const getCheckDate     = weekCheckDateObj;
+  const fmtDate          = fmtShortDate;
 
   function weekRange(sem, w) {
     const tue = getCheckDate(sem, w);
@@ -337,7 +310,8 @@
     document.getElementById('stampHint').style.display = 'none';
 
     // 헤더
-    document.getElementById('headerGreet').textContent = isTue ? '오늘은 목요일이에요' : '안녕하세요';
+    document.getElementById('headerGreet').textContent = isTue ? `오늘은 ${CHECK_DAY_LABEL}요일이에요` : '안녕하세요';
+    document.getElementById('lockTitle').textContent = `체크는 ${CHECK_DAY_LABEL}요일에만 가능해요`;
     document.getElementById('headerName').innerHTML = `${student.name} <span>부모님</span>`;
 
     // 화요일 배너 / 잠금
@@ -527,7 +501,7 @@
       div.className = 'att-row';
       div.innerHTML = `
         <div class="att-row-inf">
-          <div class="att-wk">${w}주차 · ${checkDate}(화)</div>
+          <div class="att-wk">${w}주차 · ${checkDate}</div>
           ${isCurrentWeek ? '<div class="att-dt">이번 주</div>' : ''}
         </div>
         <span class="att-badge ${badgeClass}">${badgeText}</span>
