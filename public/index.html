@@ -117,11 +117,17 @@
       loadEl.style.display = 'block';
 
       try {
-        const { data, error } = await sb
-          .from('joyland_students')
-          .select('id, name, grade')
-          .eq('pin', pin)
-          .eq('active', true);
+        // PIN 대조는 서버(RPC)에서 수행 — PIN 컬럼을 브라우저로 내려보내지 않기 위함
+        let { data, error } = await sb.rpc('joyland_login_pin', { p_pin: pin });
+
+        // RPC 미배포 환경 폴백 (supabase/fix_security.sql 실행 전)
+        if (error) {
+          ({ data, error } = await sb
+            .from('joyland_students')
+            .select('id, name, grade')
+            .eq('pin', pin)
+            .eq('active', true));
+        }
 
         if (error || !data || data.length === 0) {
           showError('PIN이 일치하는 학생을 찾을 수 없습니다.\n입력 정보를 다시 확인해주세요.');

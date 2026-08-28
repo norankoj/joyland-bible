@@ -323,14 +323,20 @@
     loadEl.style.display = 'block';
 
     try {
-      const { data, error } = await sb
-        .from('joyland_classes')
-        .select('password')
-        .eq('name', className)
-        .single();
+      // 비밀번호 대조는 서버(RPC)에서 수행 — 비밀번호를 브라우저로 내려보내지 않기 위함
+      const { data: ok, error } = await sb.rpc('joyland_login_class', {
+        p_name: className, p_password: pw
+      });
 
-      if (error || !data) { showErr('반 정보를 찾을 수 없습니다.'); return; }
-      if (data.password !== pw) { showErr('비밀번호가 올바르지 않습니다.'); return; }
+      if (error) {
+        // RPC 미배포 환경 폴백 (supabase/fix_security.sql 실행 전)
+        const { data, error: e2 } = await sb
+          .from('joyland_classes').select('password').eq('name', className).single();
+        if (e2 || !data) { showErr('반 정보를 찾을 수 없습니다.'); return; }
+        if (data.password !== pw) { showErr('비밀번호가 올바르지 않습니다.'); return; }
+      } else if (!ok) {
+        showErr('비밀번호가 올바르지 않습니다.'); return;
+      }
 
       currentClass = className;
       sessionStorage.setItem('teacherClass', className);

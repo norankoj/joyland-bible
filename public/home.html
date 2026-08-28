@@ -263,7 +263,9 @@
 
     try {
       // 학생 정보
-      const { data: st, error: stErr } = await sb.from('joyland_students').select('*').eq('id', studentId).single();
+      // 민감 컬럼(pin/phone/birthday)은 조회하지 않습니다 — supabase/fix_security.sql 참고
+      const { data: st, error: stErr } = await sb.from('joyland_students')
+        .select('id, name, grade, class_name, active').eq('id', studentId).single();
       if (stErr || !st || !st.active) { localStorage.clear(); window.location.href = 'index.html'; return; }
       student = st;
 
