@@ -10,8 +10,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // =============================================
 
 // 통독 체크 가능 요일 (0=일 1=월 2=화 3=수 4=목 5=금 6=토)
-// ※ 실제 운영은 2(화요일). 테스트 중에는 이 값만 바꾸면 전 페이지에 반영됩니다.
-const CHECK_DAY = 5;
+// ※ 실제 운영 = 2(화요일). 테스트할 때만 잠시 바꾸고 반드시 2로 되돌리세요.
+const CHECK_DAY = 2;
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const CHECK_DAY_LABEL = DAY_NAMES[CHECK_DAY];
