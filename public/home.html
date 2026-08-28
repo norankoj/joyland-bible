@@ -272,14 +272,14 @@
 
   async function init() {
     const studentId = localStorage.getItem('studentId');
-    if (!studentId) { window.location.href = 'index.html'; return; }
+    if (!studentId) { window.location.href = '/'; return; }
 
     try {
       // 학생 정보
       // 민감 컬럼(pin/phone/birthday)은 조회하지 않습니다 — supabase/fix_security.sql 참고
       const { data: st, error: stErr } = await sb.from('joyland_students')
         .select('id, name, grade, class_name, active').eq('id', studentId).single();
-      if (stErr || !st || !st.active) { localStorage.clear(); window.location.href = 'index.html'; return; }
+      if (stErr || !st || !st.active) { localStorage.clear(); window.location.href = '/'; return; }
       student = st;
 
       // 활성 학기
@@ -558,7 +558,7 @@
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+  function logout() { localStorage.clear(); window.location.href = '/'; }
 
   init();
 </script>
