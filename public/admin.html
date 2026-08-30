@@ -439,7 +439,7 @@
           <div style="font-size:15px;font-weight:800">등록된 학생 목록</div>
           <div style="position:relative;flex:1;min-width:160px">
             <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
-            <input id="stuSearch" type="text" placeholder="이름·반 검색…" oninput="renderStudentList()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
+            <input id="stuSearch" type="text" placeholder="이름·반·부모님·PIN·전화번호 검색…" oninput="renderStudentList()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
           </div>
           <div id="stuCount" style="font-size:12px;color:var(--sub);white-space:nowrap"></div>
           <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none" onclick="exportStudentsExcel()">📥 엑셀 다운로드</button>
@@ -1018,8 +1018,17 @@
       <th>관리</th>
     </tr>`;
 
-    const q = (document.getElementById('stuSearch')?.value || '').trim();
-    let list = students.filter(s => q === '' || s.name.includes(q) || (s.class_name || '').includes(q));
+    // 이름·학년·성별·반·부모님·PIN·전화번호·생일 전부 검색 (공백으로 나눠 AND 검색)
+    const q = (document.getElementById('stuSearch')?.value || '').trim().toLowerCase();
+    const terms = q ? q.split(/\s+/) : [];
+    const haystack = s => [
+      s.name, s.grade, s.gender, s.class_name, s.parent_name,
+      s.pin, s.phone, (s.phone || '').replace(/\D/g, ''), s.birthday,
+      s.active ? '재학' : '비활성'
+    ].filter(Boolean).join(' ').toLowerCase();
+    let list = terms.length
+      ? students.filter(s => { const h = haystack(s); return terms.every(t => h.includes(t)); })
+      : students.slice();
 
     if (stuSortCol === 'name')  list.sort((a,b) => stuSortDir * a.name.localeCompare(b.name, 'ko'));
     else if (stuSortCol === 'grade') list.sort((a,b) => stuSortDir * (parseInt(a.grade) - parseInt(b.grade)));
