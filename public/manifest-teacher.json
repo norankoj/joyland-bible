@@ -1,0 +1,16 @@
+{
+  "name": "조이랜드 출석 체크",
+  "short_name": "조이랜드 출석",
+  "description": "조이랜드 반별 출석 체크 · 명단 관리",
+  "start_url": "/teacher",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2DC38C",
+  "lang": "ko",
+  "icons": [
+    { "src": "/icons/icon-teacher-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-teacher-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

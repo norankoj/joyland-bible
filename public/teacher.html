@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>조이랜드 · 출석 체크</title>
+  <!-- 앱처럼 설치 (PWA) -->
+  <link rel="manifest" href="/manifest-teacher.json">
+  <meta name="theme-color" content="#2DC38C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="조이랜드 출석">
+  <link rel="apple-touch-icon" href="/icons/icon-teacher-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-teacher-192.png">
+  <script>window.JOYLAND_APP='teacher';</script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --green:#2DC38C; --orange:#FF8C42; --red:#EF4444; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; }
@@ -241,9 +251,11 @@
     .wk-tab.wk-opening { border-color:var(--green); background:#EDFAF4; }
     .wk-tab.wk-break   { border-color:var(--orange); background:#FFF8F2; }
     .wk-tab.wk-closing { border-color:#F43F5E; background:#FFF0F3; }
+    .wk-tab.wk-test    { border-color:#2563EB; background:#EFF6FF; }
     .wk-tab.active.wk-opening,
     .wk-tab.active.wk-break,
-    .wk-tab.active.wk-closing { background:var(--p); border-color:var(--p); }
+    .wk-tab.active.wk-closing,
+    .wk-tab.active.wk-test { background:var(--p); border-color:var(--p); }
     .wk-tab.wk-future { opacity:0.45; }
     .wk-tab-n { font-size:12px; font-weight:800; color:var(--text); }
     .wk-tab.active .wk-tab-n { color:white; }
@@ -253,6 +265,7 @@
     .wk-tab.wk-opening .wk-tab-tag { color:var(--green); }
     .wk-tab.wk-break   .wk-tab-tag { color:var(--orange); }
     .wk-tab.wk-closing .wk-tab-tag { color:#F43F5E; }
+    .wk-tab.wk-test    .wk-tab-tag { color:#2563EB; }
     .wk-tab.active .wk-tab-tag { color:rgba(255,255,255,0.85); }
   </style>
 </head>
@@ -360,6 +373,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+  <script src="js/pwa.js" defer></script>
 <script>
   let currentClass = null, students = [], semester = null;
   let attRecords = {};
@@ -549,12 +563,14 @@
       const isFuture  = w > currentWeek;
       const isActive  = w === selectedWeek;
       const shortDate = fmtShortDate(weekCheckDateObj(semester, w));
-      const tag = isOpenW ? '개강' : isBreak ? '방학' : isClose ? '종강' : '';
+      const isTest = (semester.test_weeks || []).includes(w);
+      const tag = isOpenW ? '개강' : isBreak ? '방학' : isClose ? '종강' : isTest ? '테스트' : '';
       let cls = 'wk-tab';
       if (isActive) cls += ' active';
       if (isOpenW) cls += ' wk-opening';
       else if (isBreak) cls += ' wk-break';
       else if (isClose) cls += ' wk-closing';
+      else if (isTest) cls += ' wk-test';
       if (isFuture) cls += ' wk-future';
       html += `<button class="${cls}" onclick="selectWeek(${w})"><div class="wk-tab-n">${w}주</div><div class="wk-tab-d">${shortDate}</div>${tag ? `<div class="wk-tab-tag">${tag}</div>` : ''}</button>`;
     }

@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>조이랜드 통독</title>
+  <!-- 앱처럼 설치 (PWA) -->
+  <link rel="manifest" href="/manifest-home.json">
+  <meta name="theme-color" content="#7B4FE8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="조이랜드 통독">
+  <link rel="apple-touch-icon" href="/icons/icon-home-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-home-192.png">
+  <script>window.JOYLAND_APP='home';</script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --gold:#FFB800; --amber:#FF8C42; --green:#2DC38C; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; --bg:#F8F6FF; }
@@ -60,7 +70,8 @@
       aspect-ratio: 1; border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    .stamp-wk { font-size: 11px; font-weight: 700; }
+    .stamp-wk { font-size: 12px; font-weight: 800; line-height: 1.15; }
+    .stamp-dt { font-size: 9.5px; font-weight: 600; opacity: .72; line-height: 1.2; margin-top: 1px; }
     .stamp.done { background: linear-gradient(135deg, #7B4FE8, #B088FF); color: white; box-shadow: 0 4px 14px rgba(123,79,232,0.3); }
     .stamp.partial { background: linear-gradient(135deg, #FFB800, #FF8C42); color: white; box-shadow: 0 4px 12px rgba(255,184,0,0.28); }
     .stamp.open { background: white; color: var(--p); border: 3px solid var(--p); cursor: pointer; animation: pulse 1.6s ease-in-out infinite; }
@@ -73,7 +84,16 @@
       background: repeating-linear-gradient(45deg, #F7F5FF, #F7F5FF 5px, #EFEBFC 5px, #EFEBFC 10px);
       color: #9C93C4; border: 1.5px dashed #CFC7EE; cursor: default;
     }
-    .stamp-tag { font-size: 9px; font-weight: 800; margin-top: 2px; letter-spacing: .02em; }
+    .stamp-tag { font-size: 8.5px; font-weight: 800; margin-top: 1px; letter-spacing: -.02em; line-height: 1.1; }
+    /* 테스트 주차 — 체크는 가능하지만 시상에는 미반영 */
+    .stamp.test { position: relative; }
+    .stamp.test.future,
+    .stamp.test.missed { background: #FFF6E6; color: #C08A2E; border: 1.5px dashed #F0C97A; }
+    .stamp.test.locked { background: #FFF1D9; color: #B5801F; border: 2px solid #EFC271; }
+    .stamp.test.open   { background: white; color: #E09A25; border: 3px solid #F0B446; }
+    .stamp.test .stamp-tag { color: #D08C1E; }
+    .stamp.test.done .stamp-tag,
+    .stamp.test.partial .stamp-tag { color: rgba(255,255,255,.9); }
     @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(123,79,232,0.3)} 50%{box-shadow:0 0 0 8px rgba(123,79,232,0)} }
 
     .hist-item { display: flex; align-items: center; padding: 13px 0; border-bottom: 1px solid #F0EBFF; gap: 12px; }
@@ -246,6 +266,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+  <script src="js/pwa.js" defer></script>
 <script>
   let student = null, semester = null, weekRecords = {}, attRecords = {}, checkingWeek = null, currentCheckWeek = 0;
 
@@ -256,12 +277,7 @@
   const getCheckDate     = weekCheckDateObj;
   const fmtDate          = fmtShortDate;
 
-  function specialWeekLabel(w) {
-    if (!semester) return '';
-    if ((semester.opening_weeks || []).includes(w)) return '개강';
-    if ((semester.closing_weeks || []).includes(w)) return '종강';
-    return '방학';
-  }
+  const specialWeekLabel = w => (semester ? weekTypeLabel(semester, w) : '') || '';
 
   function weekRange(sem, w) {
     const tue = getCheckDate(sem, w);
@@ -331,20 +347,26 @@
 
     // 화요일 배너 / 잠금
     currentCheckWeek = currentWeek;
-    const specialSet = specialWeekSet(semester);
-    const isSpecialNow = specialSet.has(currentWeek);
+    const specialSet = specialWeekSet(semester);   // 시상 제외 (테스트 포함)
+    const noCheckSet = noCheckWeekSet(semester);   // 체크 자체 불가
+    const isNoCheckNow = noCheckSet.has(currentWeek);
+    const isTestNow = weekTypeLabel(semester, currentWeek) === '테스트';
     const inSemester = currentWeek >= 1 && currentWeek <= totalWeeks;
-    const showsBanner = isTue && inSemester && !isSpecialNow;
+    const showsBanner = isTue && inSemester && !isNoCheckNow;
     if (showsBanner) {
       const alreadyChecked = !!weekRecords[currentWeek];
       document.getElementById('tueBanner').style.display = 'flex';
       document.getElementById('childDeadline').style.display = 'block';
-      document.querySelector('#tueBanner .bt').textContent = alreadyChecked ? '이번 주 통독 수정하기' : '이번 주 통독 체크하기';
-      document.querySelector('#tueBanner .bs').textContent = alreadyChecked
-        ? `${weekRecords[currentWeek] === 'done' ? '완료' : '부분완료'}로 기록됨 · 수정 가능`
-        : '오늘 자정(24:00)까지';
+      document.querySelector('#tueBanner .bt').textContent = isTestNow
+        ? '연습해보기 (테스트 주간)'
+        : (alreadyChecked ? '이번 주 통독 수정하기' : '이번 주 통독 체크하기');
+      document.querySelector('#tueBanner .bs').textContent = isTestNow
+        ? '자유롭게 눌러보세요 · 시상에는 반영되지 않아요'
+        : (alreadyChecked
+            ? `${weekRecords[currentWeek] === 'done' ? '완료' : '부분완료'}로 기록됨 · 수정 가능`
+            : '오늘 자정(24:00)까지');
       document.getElementById('checkBtn').textContent = alreadyChecked ? '수정' : '체크';
-    } else if (isSpecialNow && inSemester) {
+    } else if (isNoCheckNow && inSemester) {
       // 방학·개강·종강 주간 안내
       const lock = document.getElementById('lockNotice');
       lock.style.display = 'flex';
@@ -377,25 +399,36 @@
     const grid = document.getElementById('stampGrid');
     grid.innerHTML = '';
     const now = new Date();
-    const specialSet = specialWeekSet(semester);
+    const noCheckSet = noCheckWeekSet(semester);
     for (let w = 1; w <= totalWeeks; w++) {
       const div = document.createElement('div');
       div.className = 'stamp';
       const status = weekRecords[w];
       const checkDate = semester ? getCheckDate(semester, w) : null;
+      // 날짜 (8/25 형식) — 모든 도장에 함께 표시
+      const dateStr = checkDate ? `${checkDate.getUTCMonth()+1}/${checkDate.getUTCDate()}` : '';
+      const tag = semester ? weekTypeLabel(semester, w) : null;
+      const body = (extraTag) =>
+        `<div class="stamp-wk">${w}주</div>` +
+        (dateStr ? `<div class="stamp-dt">${dateStr}</div>` : '') +
+        (extraTag ? `<div class="stamp-tag">${extraTag}</div>` : '');
 
       // 방학·개강·종강 주차는 통독 체크 대상이 아님
-      if (specialSet.has(w)) {
+      if (noCheckSet.has(w)) {
         div.classList.add('special');
-        div.title = specialWeekLabel(w) + ' 주간 · 통독 체크 없음';
-        div.innerHTML = `<div class="stamp-wk">${w}주</div><div class="stamp-tag">${specialWeekLabel(w)}</div>`;
+        div.title = `${tag} 주간 · 통독 체크 없음`;
+        div.innerHTML = body(tag);
         grid.appendChild(div);
         continue;
       }
 
+      // 테스트 주차 — 체크는 가능, 시상에는 미반영
+      const isTest = tag === '테스트';
+      if (isTest) div.classList.add('test');
+
       if (status) {
         div.classList.add(status);
-        div.innerHTML = `<div class="stamp-wk">${w}주</div>`;
+        div.innerHTML = body(isTest ? '테스트' : null);
         if (isTue && w === currentWeek) {
           div.style.cursor = 'pointer';
           div.title = '탭해서 수정';
@@ -403,17 +436,17 @@
         }
       } else if (w === currentWeek && isTue) {
         div.classList.add('open');
-        div.innerHTML = `<div class="stamp-wk">${w}주</div>`;
+        div.innerHTML = body(isTest ? '테스트' : null);
         div.onclick = () => openSheet(w);
       } else if (w === currentWeek && !isTue) {
         div.classList.add('locked');
-        div.innerHTML = `<div class="stamp-wk">${w}주</div>`;
+        div.innerHTML = body(isTest ? '테스트' : null);
       } else if (checkDate && checkDate < now && w < currentWeek) {
         div.classList.add('missed');
-        div.innerHTML = `<div class="stamp-wk">${w}주</div>`;
+        div.innerHTML = body(isTest ? '테스트' : null);
       } else {
         div.classList.add('future');
-        div.innerHTML = `<div class="stamp-wk">${w}주</div>`;
+        div.innerHTML = body(isTest ? '테스트' : null);
       }
       grid.appendChild(div);
     }
@@ -433,9 +466,11 @@
       const range = semester ? weekRange(semester, w) : '';
       const checkDate = semester ? fmtDate(getCheckDate(semester, w)) : '';
       let statusHtml = '미체크', statusClass = 'missed';
-      if (specialWeekSet(semester).has(w)) { statusHtml = specialWeekLabel(w); statusClass = 'missed'; }
-      else if (status === 'done') { statusHtml = '완료'; statusClass = 'done'; }
-      else if (status === 'partial') { statusHtml = '부분완료'; statusClass = 'partial'; }
+      const wLabel = semester ? weekTypeLabel(semester, w) : null;
+      if (noCheckWeekSet(semester).has(w)) { statusHtml = wLabel; statusClass = 'missed'; }
+      else if (status === 'done') { statusHtml = wLabel === '테스트' ? '완료 (테스트)' : '완료'; statusClass = 'done'; }
+      else if (status === 'partial') { statusHtml = wLabel === '테스트' ? '부분완료 (테스트)' : '부분완료'; statusClass = 'partial'; }
+      else if (wLabel === '테스트') { statusHtml = '테스트'; statusClass = 'missed'; }
       const div = document.createElement('div');
       div.className = 'hist-item';
       div.innerHTML = `
@@ -451,7 +486,7 @@
 
   function openSheet(weekNum) {
     // 방학·개강·종강 주차는 체크 대상이 아님 (UI 우회 방지)
-    if (specialWeekSet(semester).has(weekNum)) {
+    if (noCheckWeekSet(semester).has(weekNum)) {
       showToast(`${specialWeekLabel(weekNum)} 주간은 통독 체크를 하지 않아요`);
       return;
     }

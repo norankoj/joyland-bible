@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>조이랜드 통독 - 관리자</title>
+  <!-- 앱처럼 설치 (PWA) -->
+  <link rel="manifest" href="/manifest-admin.json">
+  <meta name="theme-color" content="#7B4FE8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="조이랜드 관리">
+  <link rel="apple-touch-icon" href="/icons/icon-admin-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-admin-192.png">
+  <script>window.JOYLAND_APP='admin';</script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root { --p:#7B4FE8; --pl:#F2EEFF; --pd:#5B2ED6; --gold:#FFB800; --amber:#FF8C42; --green:#2DC38C; --text:#1A1140; --sub:#6B6785; --bdr:#EDECF5; --bg:#FFFFFF; --surface:#FAFAFA; --shadow:0 2px 18px rgba(100,80,180,0.09); }
@@ -158,6 +168,7 @@
     .wk-chip.opening-on .wk-num { color:var(--green); }
     .wk-chip.opening-on .wk-date { color:var(--green); }
     .wk-chip.opening-on .wk-tag { color:var(--green); }
+    .wk-chip.test-on    { border-color:#2563EB; background:#EFF6FF; }
     .wk-chip.closing-on { border-color:#F43F5E; background:#FFF0F3; }
     .wk-chip.closing-on .wk-num { color:#F43F5E; }
     .wk-chip.closing-on .wk-date { color:#F43F5E; }
@@ -554,6 +565,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="js/config.js"></script>
+  <script src="js/pwa.js" defer></script>
 <script>
   let semester = null, students = [], records = {}, classes = [], xlsxRows = [];
   // 출석 현황 (loadAll 에서 함께 채우므로 여기서 선언 — 아래쪽 선언 시 TDZ 오류 발생)
@@ -880,8 +892,9 @@
     const breakSet  = new Set(semester.break_weeks || []);
     const openSet   = new Set(semester.opening_weeks || []);
     const closeSet  = new Set(semester.closing_weeks || []);
-    const specialSet = new Set([...breakSet, ...openSet, ...closeSet]);
-    const effectiveWeeks = totalWeeks - specialSet.size; // 실질 주차 수 (방학+개강+종강 제외)
+    const testSet   = new Set(semester.test_weeks || []);
+    const specialSet = specialWeekSet(semester);
+    const effectiveWeeks = totalWeeks - specialSet.size; // 실질 주차 수 (방학·개강·종강·테스트 제외)
     const showWeeks = totalWeeks;
 
     document.getElementById('checkSub').textContent =
@@ -898,9 +911,10 @@
       const isBreak = breakSet.has(w);
       const isOpen  = openSet.has(w);
       const isClose = closeSet.has(w);
-      const dateLabel = `<div style="font-size:10px;font-weight:500;color:${isCur ? 'var(--p)' : isBreak ? '#92400E' : isOpen ? 'var(--green)' : isClose ? '#F43F5E' : 'var(--sub)'};margin-top:2px">${weekDate(w)}</div>`;
-      const label = isBreak ? `${w}주 🌿` : isOpen ? `${w}주 🌱` : isClose ? `${w}주 🎓` : `${w}주${isCur ? ' ◀' : ''}`;
-      th += `<th class="${isCur ? 'cur-week' : ''}" style="min-width:72px${isBreak ? ';background:#FEF9EC' : isOpen ? ';background:#EDFAF4' : isClose ? ';background:#FFF0F3' : ''}">${label}${dateLabel}</th>`;
+      const isTest  = testSet.has(w);
+      const dateLabel = `<div style="font-size:10px;font-weight:500;color:${isCur ? 'var(--p)' : isBreak ? '#92400E' : isOpen ? 'var(--green)' : isClose ? '#F43F5E' : isTest ? '#2563EB' : 'var(--sub)'};margin-top:2px">${weekDate(w)}</div>`;
+      const label = isBreak ? `${w}주 🌿` : isOpen ? `${w}주 🌱` : isClose ? `${w}주 🎓` : isTest ? `${w}주 🧪` : `${w}주${isCur ? ' ◀' : ''}`;
+      th += `<th class="${isCur ? 'cur-week' : ''}" style="min-width:72px${isBreak ? ';background:#FEF9EC' : isOpen ? ';background:#EDFAF4' : isClose ? ';background:#FFF0F3' : isTest ? ';background:#EFF6FF' : ''}">${label}${dateLabel}</th>`;
     }
     if (checkTabMode === 'all') {
       th += `<th style="min-width:64px;${thStyle}" onclick="sortBy('done')">완료 수${sortIndicator('done')}</th>`;
@@ -1213,7 +1227,8 @@
     const breakSet  = new Set(sem.break_weeks || []);
     const openSet   = new Set(sem.opening_weeks || []);
     const closeSet  = new Set(sem.closing_weeks || []);
-    const specialSet = new Set([...breakSet, ...openSet, ...closeSet]);
+    const testSet   = new Set(sem.test_weeks || []);
+    const specialSet = specialWeekSet(sem);   // 테스트 주차까지 통계에서 제외
     document.getElementById('attSub').textContent = `${sem.year}년 ${sem.semester}학기 · ${currentWeek}주차 진행 중`;
 
     populateAttFilters();
@@ -1265,9 +1280,10 @@
       const isBrk  = breakSet.has(w);
       const isOpn  = openSet.has(w);
       const isCls  = closeSet.has(w);
+      const isTst  = testSet.has(w);
       const isCur  = w === currentWeek;
-      const style  = isBrk ? 'background:#FEF3C7;color:#92400E' : isOpn ? 'background:#EDFAF4;color:var(--green)' : isCls ? 'background:#FFF0F3;color:#F43F5E' : isCur ? 'background:rgba(123,79,232,.1);color:var(--p)' : '';
-      thHtml += `<th style="white-space:nowrap;${style ? style+';' : ''}">${w}주<br><span style="font-size:10px;font-weight:400;opacity:.75">${weekDate(w)}</span></th>`;
+      const style  = isBrk ? 'background:#FEF3C7;color:#92400E' : isOpn ? 'background:#EDFAF4;color:var(--green)' : isCls ? 'background:#FFF0F3;color:#F43F5E' : isTst ? 'background:#EFF6FF;color:#2563EB' : isCur ? 'background:rgba(123,79,232,.1);color:var(--p)' : '';
+      thHtml += `<th style="white-space:nowrap;${style ? style+';' : ''}">${w}주<br><span style="font-size:10px;font-weight:400;opacity:.75">${weekDate(w)}</span>${isTst ? '<br><span style="font-size:9px;font-weight:800">테스트</span>' : ''}</th>`;
     }
     thHtml += `<th style="white-space:nowrap;${thS}" onclick="attSort('rate')">출석률${si('rate')}</th></tr>`;
     document.getElementById('attThead').innerHTML = thHtml;
@@ -1562,9 +1578,9 @@
     if (!year||!total||!firstCheck) { showMsg(errEl,'모든 항목을 입력해주세요.'); return; }
     if (new Date(firstCheck).getUTCDay()!==CHECK_DAY) { showMsg(errEl,`첫 체크일은 ${CHECK_DAY_LABEL}요일이어야 합니다.`); return; }
     if (semester) { showMsg(errEl,'현재 학기를 먼저 종료해주세요.'); return; }
-    const { breaks, openings, closings } = getWeekTypeFromPicker('new');
+    const { breaks, openings, closings, tests } = getWeekTypeFromPicker('new');
     loading(true);
-    const { error }=await sb.from('joyland_semesters').insert({ year, semester:sem, total_weeks:total, first_check_date:firstCheck, active:true, break_weeks:breaks, opening_weeks:openings, closing_weeks:closings });
+    const { error }=await sb.from('joyland_semesters').insert({ year, semester:sem, total_weeks:total, first_check_date:firstCheck, active:true, break_weeks:breaks, opening_weeks:openings, closing_weeks:closings, test_weeks:tests });
     loading(false);
     if (error) { showMsg(errEl,'오류: '+error.message); return; }
     showMsg(okEl,`${year}년 ${sem}학기 시작!`);
@@ -1577,70 +1593,67 @@
     return `${d.getUTCMonth()+1}/${d.getUTCDate()}`;
   }
 
-  function buildWeekPicker(mode, preBreaks = [], preOpenings = [], preClosings = []) {
+  // 주차 유형: 없음 → 방학 → 개강 → 종강 → 테스트 → 없음 (클릭 시 순환)
+  const WK_TYPES = [
+    { key:'',        cls:'',            tag:'',       color:'' },
+    { key:'break',   cls:'break-on',    tag:'방학',   color:'var(--amber)' },
+    { key:'opening', cls:'opening-on',  tag:'개강',   color:'var(--green)' },
+    { key:'closing', cls:'closing-on',  tag:'종강',   color:'#F43F5E' },
+    { key:'test',    cls:'test-on',     tag:'테스트', color:'#2563EB' }
+  ];
+
+  function buildWeekPicker(mode, preBreaks = [], preOpenings = [], preClosings = [], preTests = []) {
     const pickerEl = document.getElementById(mode === 'edit' ? 'editWeekPicker' : 'newWeekPicker');
     const firstCheck = document.getElementById(mode === 'edit' ? 'editSemFirstCheck' : 'semFirstCheck').value;
     const total = parseInt(document.getElementById(mode === 'edit' ? 'editSemWeeks' : 'semWeeks').value);
     if (!firstCheck || !total || total < 1) { pickerEl.innerHTML = '<div style="font-size:12px;color:var(--sub)">총 주차 수와 첫 체크일을 먼저 입력하세요.</div>'; return; }
 
-    const breakSet   = new Set(preBreaks);
-    const openSet    = new Set(preOpenings);
-    const closeSet   = new Set(preClosings);
+    const byWeek = new Map();
+    preBreaks.forEach(w   => byWeek.set(w, 1));
+    preOpenings.forEach(w => byWeek.set(w, 2));
+    preClosings.forEach(w => byWeek.set(w, 3));
+    preTests.forEach(w    => byWeek.set(w, 4));
+
     let html = '<div class="wk-grid">';
     for (let w = 1; w <= total; w++) {
-      const isBrk  = breakSet.has(w);
-      const isOpen = openSet.has(w);
-      const isClose = closeSet.has(w);
-      const cls = isBrk ? ' break-on' : isOpen ? ' opening-on' : isClose ? ' closing-on' : '';
-      const tag = isBrk ? '방학' : isOpen ? '개강' : isClose ? '종강' : '';
-      html += `<div class="wk-chip${cls}" id="wk-${mode}-${w}" onclick="toggleWeekChip('${mode}',${w})">
-        <span class="wk-num">${w}주</span>
-        <span class="wk-date">${weekDateStr(firstCheck, w)}</span>
-        <span class="wk-tag" style="${tag ? '' : 'visibility:hidden'}">${tag || '방학'}</span>
+      const t = WK_TYPES[byWeek.get(w) || 0];
+      html += `<div class="wk-chip${t.cls ? ' ' + t.cls : ''}" id="wk-${mode}-${w}" data-t="${byWeek.get(w) || 0}" onclick="toggleWeekChip('${mode}',${w})">
+        <span class="wk-num"${t.color ? ` style="color:${t.color}"` : ''}>${w}주</span>
+        <span class="wk-date"${t.color ? ` style="color:${t.color}"` : ''}>${weekDateStr(firstCheck, w)}</span>
+        <span class="wk-tag" style="${t.tag ? `color:${t.color}` : 'visibility:hidden'}">${t.tag || '방학'}</span>
       </div>`;
     }
-    html += '</div><div style="margin-top:10px;font-size:11px;color:var(--sub)">클릭: 방학(주황) → 개강(초록) → 종강(빨강) → 해제</div>';
+    html += '</div><div style="margin-top:10px;font-size:11px;color:var(--sub);line-height:1.7">' +
+      '클릭할 때마다: <b style="color:var(--amber)">방학</b> → <b style="color:var(--green)">개강</b> → <b style="color:#F43F5E">종강</b> → <b style="color:#2563EB">테스트</b> → 해제<br>' +
+      '방학·개강·종강은 체크 자체가 막히고, <b style="color:#2563EB">테스트</b>는 체크는 되지만 시상에 반영되지 않습니다.</div>';
     pickerEl.innerHTML = html;
   }
 
   function toggleWeekChip(mode, w) {
     const chip = document.getElementById(`wk-${mode}-${w}`);
-    const isBreak = chip.classList.contains('break-on');
-    const isOpen  = chip.classList.contains('opening-on');
-    const isClose = chip.classList.contains('closing-on');
-    chip.classList.remove('break-on', 'opening-on', 'closing-on');
+    const next = ((parseInt(chip.dataset.t) || 0) + 1) % WK_TYPES.length;
+    const t = WK_TYPES[next];
+    chip.dataset.t = next;
+    chip.classList.remove(...WK_TYPES.filter(x => x.cls).map(x => x.cls));
+    if (t.cls) chip.classList.add(t.cls);
     const num  = chip.querySelector('.wk-num');
     const date = chip.querySelector('.wk-date');
     const tag  = chip.querySelector('.wk-tag');
-    if (!isBreak && !isOpen && !isClose) {
-      chip.classList.add('break-on');
-      tag.textContent = '방학'; tag.style.visibility = 'visible';
-      num.style.color = 'var(--amber)'; date.style.color = 'var(--amber)';
-    } else if (isBreak) {
-      chip.classList.add('opening-on');
-      tag.textContent = '개강'; tag.style.visibility = 'visible';
-      num.style.color = 'var(--green)'; date.style.color = 'var(--green)';
-    } else if (isOpen) {
-      chip.classList.add('closing-on');
-      tag.textContent = '종강'; tag.style.visibility = 'visible';
-      num.style.color = '#F43F5E'; date.style.color = '#F43F5E';
-    } else {
-      tag.style.visibility = 'hidden';
-      num.style.color = ''; date.style.color = '';
-    }
+    num.style.color = t.color; date.style.color = t.color;
+    if (t.tag) { tag.textContent = t.tag; tag.style.visibility = 'visible'; tag.style.color = t.color; }
+    else { tag.style.visibility = 'hidden'; }
   }
 
   function getWeekTypeFromPicker(mode) {
     const total = parseInt(document.getElementById(mode === 'edit' ? 'editSemWeeks' : 'semWeeks').value) || 0;
-    const breaks = [], openings = [], closings = [];
+    const breaks = [], openings = [], closings = [], tests = [];
+    const bucket = { 1: breaks, 2: openings, 3: closings, 4: tests };
     for (let w = 1; w <= total; w++) {
       const chip = document.getElementById(`wk-${mode}-${w}`);
       if (!chip) continue;
-      if (chip.classList.contains('break-on'))    breaks.push(w);
-      else if (chip.classList.contains('opening-on'))  openings.push(w);
-      else if (chip.classList.contains('closing-on'))  closings.push(w);
+      bucket[parseInt(chip.dataset.t) || 0]?.push(w);
     }
-    return { breaks, openings, closings };
+    return { breaks, openings, closings, tests };
   }
 
   function showEditSem() {
@@ -1651,7 +1664,7 @@
     document.getElementById('editSemFirstCheck').value = semester.first_check_date;
     document.getElementById('editSemForm').style.display = 'block';
     document.getElementById('editSemErr').style.display = 'none';
-    buildWeekPicker('edit', semester.break_weeks || [], semester.opening_weeks || [], semester.closing_weeks || []);
+    buildWeekPicker('edit', semester.break_weeks || [], semester.opening_weeks || [], semester.closing_weeks || [], semester.test_weeks || []);
   }
 
   function hideEditSem() {
@@ -1667,10 +1680,11 @@
     errEl.style.display = 'none';
     if (!year || !total || !firstCheck) { showMsg(errEl, '모든 항목을 입력해주세요.'); return; }
     if (new Date(firstCheck).getUTCDay() !== CHECK_DAY) { showMsg(errEl, `첫 체크일은 ${CHECK_DAY_LABEL}요일이어야 합니다.`); return; }
-    const { breaks, openings, closings } = getWeekTypeFromPicker('edit');
+    const { breaks, openings, closings, tests } = getWeekTypeFromPicker('edit');
     loading(true);
     const { error } = await sb.from('joyland_semesters').update({
-      year, semester: sem, total_weeks: total, first_check_date: firstCheck, break_weeks: breaks, opening_weeks: openings, closing_weeks: closings
+      year, semester: sem, total_weeks: total, first_check_date: firstCheck,
+      break_weeks: breaks, opening_weeks: openings, closing_weeks: closings, test_weeks: tests
     }).eq('id', semester.id);
     loading(false);
     if (error) { showMsg(errEl, '오류: ' + error.message); return; }

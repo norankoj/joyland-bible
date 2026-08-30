@@ -59,12 +59,36 @@ function fmtLongDate(d) {
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${DAY_NAMES[d.getUTCDay()]})`;
 }
 
-/** 방학·개강·종강 주차 합집합 (시상/비율 계산에서 제외되는 주차) */
+/**
+ * 시상·비율 계산에서 제외되는 주차 (방학·개강·종강·테스트)
+ * ※ 테스트 주차는 체크는 가능하지만 시상에는 반영되지 않습니다.
+ */
 function specialWeekSet(sem) {
+  if (!sem) return new Set();
+  return new Set([
+    ...(sem.break_weeks || []),
+    ...(sem.opening_weeks || []),
+    ...(sem.closing_weeks || []),
+    ...(sem.test_weeks || [])
+  ]);
+}
+
+/** 통독·출석 체크 자체가 불가능한 주차 (방학·개강·종강) */
+function noCheckWeekSet(sem) {
   if (!sem) return new Set();
   return new Set([
     ...(sem.break_weeks || []),
     ...(sem.opening_weeks || []),
     ...(sem.closing_weeks || [])
   ]);
+}
+
+/** 주차 유형 라벨 — 없으면 null */
+function weekTypeLabel(sem, w) {
+  if (!sem) return null;
+  if ((sem.opening_weeks || []).includes(w)) return '개강';
+  if ((sem.closing_weeks || []).includes(w)) return '종강';
+  if ((sem.break_weeks   || []).includes(w)) return '방학';
+  if ((sem.test_weeks    || []).includes(w)) return '테스트';
+  return null;
 }

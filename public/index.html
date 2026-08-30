@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>조이랜드 통독</title>
+  <!-- 앱처럼 설치 (PWA) -->
+  <link rel="manifest" href="/manifest-home.json">
+  <meta name="theme-color" content="#7B4FE8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="조이랜드 통독">
+  <link rel="apple-touch-icon" href="/icons/icon-home-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-home-192.png">
+  <script>window.JOYLAND_APP='home';</script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root { --p:#7B4FE8; --pl:#F0EBFF; --pd:#5B2ED6; --text:#1E1248; --sub:#8B87A0; --bdr:#EEE8FF; }
@@ -99,6 +109,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/pwa.js" defer></script>
   <script>
     document.getElementById('pinInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') login();
