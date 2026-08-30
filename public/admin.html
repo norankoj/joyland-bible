@@ -377,6 +377,9 @@
           <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
           <input id="checkSearch" type="text" placeholder="이름 검색…" oninput="renderCheckTable()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
         </div>
+        <select id="checkClassFilter" onchange="renderCheckTable()" style="padding:9px 10px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;cursor:pointer">
+          <option value="">전체 반</option>
+        </select>
         <div id="checkCount" style="font-size:12px;color:var(--sub);white-space:nowrap"></div>
       </div>
       <div class="tbl-scroll-wrap">
@@ -928,6 +931,18 @@
       : '<span style="color:var(--p);margin-left:3px">↓</span>';
   }
 
+  /** 주차별 체크 표의 반 필터 옵션 채우기 (선택값은 유지) */
+  function populateCheckClassFilter() {
+    const sel = document.getElementById('checkClassFilter');
+    if (!sel) return;
+    const names = [...new Set(students.filter(s => s.active).map(s => s.class_name).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'ko'));
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">전체 반</option>'
+      + names.map(n => `<option value="${n}">${n}</option>`).join('');
+    if (names.includes(cur)) sel.value = cur;
+  }
+
   function renderCheckTable() {
     if (!semester) { document.getElementById('checkSub').textContent = '활성 학기 없음'; return; }
     const curWeek = calcWeek(semester);
@@ -942,6 +957,8 @@
 
     document.getElementById('checkSub').textContent =
       `${semester.year}년 ${semester.semester}학기 · 현재 ${curWeek}주차 진행 중`;
+
+    populateCheckClassFilter();
 
     const thStyle = 'cursor:pointer;user-select:none;white-space:nowrap';
 
@@ -967,8 +984,11 @@
     document.getElementById('checkThead').innerHTML = th;
 
     // 학생 필터
-    const q = (document.getElementById('checkSearch')?.value || '').trim();
-    let list = students.filter(s => s.active && (q === '' || s.name.includes(q)));
+    const q  = (document.getElementById('checkSearch')?.value || '').trim();
+    const cf = document.getElementById('checkClassFilter')?.value || '';
+    let list = students.filter(s => s.active
+      && (q === '' || s.name.includes(q))
+      && (cf === '' || (s.class_name || '') === cf));
 
     // 정렬 (완료수/완주율은 계산 필요)
     const getDone = s => {
@@ -987,7 +1007,9 @@
 
     // 카운트 표시
     const countEl = document.getElementById('checkCount');
-    if (countEl) countEl.textContent = q ? `${list.length}명 검색됨` : `총 ${list.length}명`;
+    if (countEl) countEl.textContent = (q || cf)
+      ? `${list.length}명 표시 중`
+      : `총 ${list.length}명`;
 
     // 바디
     let tb = '';
