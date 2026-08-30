@@ -344,6 +344,7 @@
     <div id="tab-check" style="display:none">
       <div class="pg-t">주차별 체크 현황</div>
       <div class="pg-s" id="checkSub"></div>
+      <div style="font-size:12px;color:var(--sub);margin:-4px 0 12px">✏️ 표의 칸을 클릭하면 완료·부분완료를 바로 수정할 수 있습니다. (학부모님 오입력 보정용)</div>
       <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
         <div class="sub-tabs" style="margin-bottom:0;flex:none">
           <button class="sub-tab active" id="stab-cur" onclick="switchCheckTab('cur')">이번 학기</button>
@@ -959,6 +960,7 @@
         const isBreak = breakSet.has(w);
         const isOpen  = openSet.has(w);
         const isClose = closeSet.has(w);
+        const isSpecialCell = isBreak || isOpen || isClose;
         let badge;
         if (isBreak)              badge = `<span class="bdg break">방학</span>`;
         else if (isOpen)          badge = `<span class="bdg" style="background:#EDFAF4;color:var(--green)">개강</span>`;
@@ -968,7 +970,11 @@
         else if (w < curWeek)     badge = `<span class="bdg missed">미체크</span>`;
         else if (w === curWeek)   badge = `<span class="bdg cur">체크 전</span>`;
         else                      badge = `<span style="color:var(--bdr)">—</span>`;
-        tb += `<td class="${isCur ? 'cur-week' : ''}"${isBreak ? ' style="background:#FFFBEB"' : isOpen ? ' style="background:#EDFAF4"' : isClose ? ' style="background:#FFF0F3"' : ''}>${badge}</td>`;
+        // 학부모가 잘못 입력한 경우 관리자가 보정할 수 있도록 클릭 편집 허용
+        const editable = !isSpecialCell && w <= curWeek;
+        const cellCls = `${isCur ? 'cur-week' : ''}${editable ? ' att-cell' : ''}`.trim();
+        const cellOn = editable ? ` title="클릭해서 통독 기록 변경" onclick="openRecEditor(event,'${s.id}',${w})"` : '';
+        tb += `<td class="${cellCls}"${cellOn}${isBreak ? ' style="background:#FFFBEB"' : isOpen ? ' style="background:#EDFAF4"' : isClose ? ' style="background:#FFF0F3"' : ''}>${badge}</td>`;
       }
       if (checkTabMode === 'all') {
         const rate = effectiveWeeks > 0 ? Math.round((doneCount / effectiveWeeks) * 100) : 0;
@@ -1387,6 +1393,64 @@
     });
     attPopEl = pop;
     setTimeout(() => document.addEventListener('click', outsideAttPop, true), 0);
+  }
+
+  /** 통독 기록 인라인 편집 (학부모 오입력 보정) */
+  function openRecEditor(evt, studentId, week) {
+    evt.stopPropagation();
+    closeAttEditor();
+    const stu = students.find(s => s.id === studentId);
+    const cur = records[studentId]?.[week] || null;
+
+    const pop = document.createElement('div');
+    pop.className = 'att-pop';
+    const opts = [['done','완료'], ['partial','부분완료'], [null,'미체크로 되돌리기']];
+    pop.innerHTML = `<div class="att-pop-t">${stu ? stu.name : ''} · ${week}주차 통독</div>` +
+      opts.map(([v,label]) =>
+        `<button class="${cur===v?'on':''}" data-v="${v===null?'':v}">${label}${cur===v?' ✓':''}</button>`
+      ).join('');
+    document.body.appendChild(pop);
+
+    const r = evt.currentTarget.getBoundingClientRect();
+    const pr = pop.getBoundingClientRect();
+    pop.style.left = Math.min(r.left, window.innerWidth  - pr.width  - 8) + 'px';
+    pop.style.top  = (r.bottom + pr.height > window.innerHeight ? r.top - pr.height - 4 : r.bottom + 4) + 'px';
+
+    pop.querySelectorAll('button').forEach(b => {
+      b.onclick = ev => { ev.stopPropagation(); saveRecCell(studentId, week, b.dataset.v || null); };
+    });
+    attPopEl = pop;
+    setTimeout(() => document.addEventListener('click', outsideAttPop, true), 0);
+  }
+
+  async function saveRecCell(studentId, week, status) {
+    closeAttEditor();
+    if (!semester) return;
+    const prev = records[studentId]?.[week] || null;
+    if (prev === status) return;
+    loading(true);
+    try {
+      if (status === null) {
+        const { error } = await sb.from('joyland_records').delete()
+          .eq('semester_id', semester.id).eq('week_num', week).eq('student_id', studentId);
+        if (error) throw error;
+        if (records[studentId]) delete records[studentId][week];
+      } else {
+        const { error } = await sb.from('joyland_records').upsert({
+          student_id: studentId, semester_id: semester.id, week_num: week, status
+        }, { onConflict: 'student_id,semester_id,week_num' });
+        if (error) throw error;
+        if (!records[studentId]) records[studentId] = {};
+        records[studentId][week] = status;
+      }
+      renderCheckTable();
+      renderDash();
+      renderAwards();
+      showToast(status ? `${week}주차 ${status === 'done' ? '완료' : '부분완료'}로 저장` : `${week}주차 기록 삭제`);
+    } catch (e) {
+      console.error(e);
+      showToast('저장 실패: 권한을 확인해주세요');
+    } finally { loading(false); }
   }
 
   async function saveAttCell(studentId, week, status) {

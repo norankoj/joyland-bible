@@ -484,12 +484,18 @@
     });
   }
 
+  /** 테스트(연습) 주차인가 — 요일·주차 제한 없이 언제든 눌러볼 수 있습니다 */
+  function isTestWeek(w) {
+    return !!semester && (semester.test_weeks || []).includes(w);
+  }
+
   function openSheet(weekNum) {
     // 방학·개강·종강 주차는 체크 대상이 아님 (UI 우회 방지)
     if (noCheckWeekSet(semester).has(weekNum)) {
       showToast(`${specialWeekLabel(weekNum)} 주간은 통독 체크를 하지 않아요`);
       return;
     }
+    // 테스트(연습) 주차도 실제와 동일하게 화요일에만 체크할 수 있습니다
     if (!isTuesdayKST()) { showToast(`통독 체크는 ${CHECK_DAY_LABEL}요일에만 가능해요`); return; }
     checkingWeek = weekNum;
     const isEdit = !!weekRecords[weekNum];
