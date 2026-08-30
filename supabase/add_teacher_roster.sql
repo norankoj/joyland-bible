@@ -95,13 +95,8 @@ begin
   end if;
   v_pin := right(v_digits, 4) || p_birthday;
 
-  -- PIN 중복 확인 (본인 제외)
-  if exists (
-    select 1 from joyland_students s
-    where s.pin = v_pin and (p_id is null or s.id <> p_id)
-  ) then
-    raise exception '같은 PIN(전화 뒤4자리+생일)의 학생이 이미 있습니다.';
-  end if;
+  -- ※ PIN 중복 검사 없음 — 쌍둥이는 같은 PIN 을 공유하며,
+  --    로그인 시 '어떤 자녀인가요?' 선택 화면으로 구분됩니다.
 
   if p_id is null then
     insert into joyland_students (name, grade, gender, phone, birthday, pin, parent_name, class_name, active)

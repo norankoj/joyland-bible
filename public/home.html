@@ -61,6 +61,15 @@
     .lock-notice .lt { font-size: 13px; font-weight: 700; color: var(--text); }
     .lock-notice .ls { font-size: 11px; color: var(--sub); margin-top: 3px; }
 
+    .practice-notice {
+      margin: 0 14px 12px; padding: 13px 16px; border-radius: 18px;
+      background: #FFF8EC; border: 1.5px dashed #F0C97A;
+      display: flex; align-items: center; gap: 11px;
+    }
+    .practice-notice .pn-em { font-size: 22px; flex-shrink: 0; }
+    .practice-notice .pn-t { font-size: 13px; font-weight: 800; color: #A9761B; }
+    .practice-notice .pn-s { font-size: 11px; color: #B98B3C; margin-top: 3px; line-height: 1.5; }
+
     .sec { padding: 20px 16px; }
     .sec-t { font-size: 15px; font-weight: 800; margin-bottom: 14px; }
     .sec-hint { font-size: 11px; color: var(--p); font-weight: 700; background: var(--pl); padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; }
@@ -186,6 +195,14 @@
     <div class="lock-notice" id="lockNotice" style="display:none">
       <div class="lt" id="lockTitle">체크는 정해진 요일에만 가능해요</div>
       <div class="ls" id="nextCheckLabel"></div>
+    </div>
+
+    <div class="practice-notice" id="practiceNotice" style="display:none">
+      <div class="pn-em">🧪</div>
+      <div>
+        <div class="pn-t"></div>
+        <div class="pn-s"></div>
+      </div>
     </div>
 
     <div class="child-card" id="childCard">
@@ -377,6 +394,19 @@
       document.getElementById('nextCheckLabel').textContent = nextTuesdayLabel();
     }
 
+    // 연습(테스트) 주차 안내 — 요일과 상관없이 항상 노출
+    const testWeeks = (semester?.test_weeks || []);
+    const practiceEl = document.getElementById('practiceNotice');
+    if (testWeeks.length && !showsBanner) {
+      practiceEl.style.display = 'flex';
+      practiceEl.querySelector('.pn-t').textContent =
+        `${testWeeks[0]}주차는 연습용이에요`;
+      practiceEl.querySelector('.pn-s').textContent =
+        '아무 때나 눌러서 미리 해보세요 · 시상에는 반영되지 않아요';
+    } else {
+      practiceEl.style.display = 'none';
+    }
+
     // 자녀 카드 (방학·개강·종강 주차는 진행률에서 제외)
     const targetWeeks = Math.max(totalWeeks - specialSet.size, 0);
     document.getElementById('childName').textContent = student.name;
@@ -422,13 +452,21 @@
         continue;
       }
 
-      // 테스트 주차 — 체크는 가능, 시상에는 미반영
+      // 테스트 주차 — 연습용이라 요일·주차와 상관없이 언제든 눌러볼 수 있습니다
       const isTest = tag === '테스트';
-      if (isTest) div.classList.add('test');
+      if (isTest) {
+        div.classList.add('test', status || 'open');
+        div.style.cursor = 'pointer';
+        div.title = '연습용 · 아무 때나 눌러볼 수 있어요 (시상 미반영)';
+        div.innerHTML = body('테스트');
+        div.onclick = () => openSheet(w);
+        grid.appendChild(div);
+        continue;
+      }
 
       if (status) {
         div.classList.add(status);
-        div.innerHTML = body(isTest ? '테스트' : null);
+        div.innerHTML = body(null);
         if (isTue && w === currentWeek) {
           div.style.cursor = 'pointer';
           div.title = '탭해서 수정';
@@ -436,17 +474,17 @@
         }
       } else if (w === currentWeek && isTue) {
         div.classList.add('open');
-        div.innerHTML = body(isTest ? '테스트' : null);
+        div.innerHTML = body(null);
         div.onclick = () => openSheet(w);
       } else if (w === currentWeek && !isTue) {
         div.classList.add('locked');
-        div.innerHTML = body(isTest ? '테스트' : null);
+        div.innerHTML = body(null);
       } else if (checkDate && checkDate < now && w < currentWeek) {
         div.classList.add('missed');
-        div.innerHTML = body(isTest ? '테스트' : null);
+        div.innerHTML = body(null);
       } else {
         div.classList.add('future');
-        div.innerHTML = body(isTest ? '테스트' : null);
+        div.innerHTML = body(null);
       }
       grid.appendChild(div);
     }
@@ -495,8 +533,10 @@
       showToast(`${specialWeekLabel(weekNum)} 주간은 통독 체크를 하지 않아요`);
       return;
     }
-    // 테스트(연습) 주차도 실제와 동일하게 화요일에만 체크할 수 있습니다
-    if (!isTuesdayKST()) { showToast(`통독 체크는 ${CHECK_DAY_LABEL}요일에만 가능해요`); return; }
+    // 테스트(연습) 주차는 부모님이 미리 익힐 수 있도록 요일 제한을 두지 않습니다
+    if (!isTestWeek(weekNum) && !isTuesdayKST()) {
+      showToast(`통독 체크는 ${CHECK_DAY_LABEL}요일에만 가능해요`); return;
+    }
     checkingWeek = weekNum;
     const isEdit = !!weekRecords[weekNum];
     document.getElementById('sheetTitle').textContent = `${weekNum}주차 통독 ${isEdit ? '수정' : '체크'}`;

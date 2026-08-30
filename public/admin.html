@@ -311,7 +311,9 @@
     <div class="sb-i"     id="mn-award"    onclick="showTab('award')">   <span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="10,2 12.5,7.5 18.5,8.2 14,12.5 15.5,18.5 10,15.5 4.5,18.5 6,12.5 1.5,8.2 7.5,7.5"/></svg></span> 시상 계산</div>
     <div class="sb-i"     id="mn-settings" onclick="showTab('settings')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="16" height="15" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="5"/><line x1="14" y1="2" x2="14" y2="5"/></svg></span> 학기 설정</div>
     <div class="sb-bottom">
-      <div class="sb-i" onclick="window.location.href = '/'"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10L10 3l7 7"/><rect x="5" y="10" width="10" height="8" rx="1"/></svg></span> 보호자 페이지</div>
+      <div style="font-size:10px;font-weight:700;color:var(--sub);padding:0 14px 6px;letter-spacing:.04em">바로가기</div>
+      <div class="sb-i" onclick="window.open('/teacher','_blank')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h6a2 2 0 0 1 2 2V17a1.6 1.6 0 0 0-1.4-1H3z"/><path d="M17 4.5h-6a2 2 0 0 0-2 2V17a1.6 1.6 0 0 1 1.4-1H17z"/></svg></span> 선생님 출석 체크</div>
+      <div class="sb-i" onclick="window.open('/','_blank')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10L10 3l7 7"/><rect x="5" y="10" width="10" height="8" rx="1"/></svg></span> 조이랜드 통독</div>
       <div class="sb-i" onclick="doLogout()"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 17H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4"/><polyline points="13 14 18 10 13 6"/><line x1="18" y1="10" x2="7" y2="10"/></svg></span> 로그아웃</div>
     </div>
   </div>
@@ -692,8 +694,9 @@
   function renderClassTable() {
     const activeStudents = students.filter(s => s.active);
     const weeks = semester?.total_weeks || 0;
-    const breakSet = new Set(semester?.break_weeks || []);
-    const effectiveWeeks = weeks - breakSet.size;
+    // 방학뿐 아니라 개강·종강·테스트 주차도 완료율 계산에서 제외
+    const specialSet = specialWeekSet(semester);
+    const effectiveWeeks = weeks - specialSet.size;
     const curWeek = semester ? calcWeek(semester) : 0;
 
     // 반별 그룹핑
@@ -716,7 +719,7 @@
       const recs = records[s.id] || {};
       let d = 0;
       for (let w = 1; w <= weeks; w++) {
-        if (breakSet.has(w)) continue;
+        if (specialSet.has(w)) continue;
         if (recs[w] === 'done') d++;
         else if (recs[w] === 'partial') d += 0.5;
       }
@@ -965,8 +968,9 @@
         if (isBreak)              badge = `<span class="bdg break">방학</span>`;
         else if (isOpen)          badge = `<span class="bdg" style="background:#EDFAF4;color:var(--green)">개강</span>`;
         else if (isClose)         badge = `<span class="bdg" style="background:#FFF0F3;color:#F43F5E">종강</span>`;
-        else if (r === 'done')    { badge = `<span class="bdg done">완료</span>`; doneCount++; }
-        else if (r === 'partial') { badge = `<span class="bdg partial">부분</span>`; doneCount += 0.5; }
+        // 완료 수·완주율에는 시상 대상 주차만 반영 (테스트 주차 제외)
+        else if (r === 'done')    { badge = `<span class="bdg done">완료</span>`; if (!specialSet.has(w)) doneCount++; }
+        else if (r === 'partial') { badge = `<span class="bdg partial">부분</span>`; if (!specialSet.has(w)) doneCount += 0.5; }
         else if (w < curWeek)     badge = `<span class="bdg missed">미체크</span>`;
         else if (w === curWeek)   badge = `<span class="bdg cur">체크 전</span>`;
         else                      badge = `<span style="color:var(--bdr)">—</span>`;
@@ -1125,8 +1129,13 @@
     if (!/^\d{4}$/.test(bday)) { showMsg(errEl,'생일은 4자리 숫자(MMDD)로 입력하세요.'); return; }
 
     const pin = phone.slice(-4) + bday;
-    const { data: dup } = await sb.from('joyland_students').select('id').eq('pin', pin).limit(1);
-    if (dup?.length) { showMsg(errEl,`PIN(${pin})이 중복됩니다. 전화번호 또는 생일을 확인해주세요.`); return; }
+    // 쌍둥이는 전화·생일이 같아 PIN 이 겹칩니다. 막지 않고 확인만 받습니다.
+    // (로그인 시 '어떤 자녀인가요?' 선택 화면으로 구분됩니다)
+    const { data: dup } = await sb.from('joyland_students').select('name').eq('pin', pin);
+    if (dup?.length) {
+      const names = dup.map(d => d.name).join(', ');
+      if (!confirm(`같은 PIN(${pin})을 쓰는 학생이 이미 있습니다: ${names}\n\n쌍둥이라면 그대로 등록하세요. 로그인 시 자녀를 선택하게 됩니다.\n오타라면 취소 후 전화번호·생일을 확인해주세요.\n\n등록할까요?`)) return;
+    }
 
     loading(true);
     const { error } = await sb.from('joyland_students').insert({ name, grade, gender, phone, birthday: bday, pin, active: true });
