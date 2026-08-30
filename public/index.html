@@ -143,6 +143,11 @@
           return;
         }
 
+        // 같은 PIN 의 자녀 목록을 보관 → 통독 화면에서 '다른 자녀'로 전환할 때 사용
+        localStorage.setItem('siblings', JSON.stringify(
+          data.map(s => ({ id: s.id, name: s.name, grade: s.grade }))
+        ));
+
         if (data.length === 1) {
           localStorage.setItem('studentId', data[0].id);
           localStorage.setItem('studentName', data[0].name);

@@ -20,7 +20,14 @@
     body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background: #EDE8FF; color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
     .page { max-width: 430px; width: 100%; background: #FFFFFF; min-height: 100vh; box-shadow: 0 0 60px rgba(107,63,216,0.15); }
 
-    .header { padding: 52px 20px 20px; }
+    .header { padding: 40px 20px 20px; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      font-size: 13px; font-weight: 700; color: var(--sub);
+      padding: 6px 10px 6px 4px; margin-bottom: 6px; border-radius: 99px;
+    }
+    .back-btn:active { background: var(--pl); color: var(--p); }
     .header-gr { font-size: 13px; color: var(--sub); margin-bottom: 5px; }
     .header-nm { font-size: 24px; font-weight: 900; color: var(--text); }
     .header-nm span { font-size: 15px; font-weight: 400; color: var(--sub); }
@@ -171,6 +178,10 @@
 
 <div class="page" id="mainPage" style="display:none">
   <div class="header" id="pageHeader">
+    <button class="back-btn" id="backBtn" onclick="goBack()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span id="backLabel">뒤로</span>
+    </button>
     <div class="header-gr" id="headerGreet"></div>
     <div class="header-nm" id="headerName"></div>
   </div>
@@ -253,6 +264,17 @@
 
   <button class="logout-btn" onclick="logout()">로그아웃</button>
   <div style="height:20px"></div>
+</div>
+
+<!-- 자녀 전환 시트 (쌍둥이·형제) -->
+<div class="overlay" id="childOverlay" onclick="hideChildSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-t">어떤 자녀인가요?</div>
+    <div class="sheet-sub">보고 싶은 자녀를 선택해주세요</div>
+    <div id="childSwitchList"></div>
+    <button class="logout-btn" style="margin-top:6px" onclick="closeChildSheet()">닫기</button>
+  </div>
 </div>
 
 <div class="overlay" id="checkOverlay" onclick="hideSheet(event)">
@@ -359,6 +381,9 @@
     document.getElementById('headerGreet').textContent = isTue ? `오늘은 ${CHECK_DAY_LABEL}요일이에요` : '안녕하세요';
     document.getElementById('lockTitle').textContent = `체크는 ${CHECK_DAY_LABEL}요일에만 가능해요`;
     document.getElementById('headerName').innerHTML = `${student.name} <span>부모님</span>`;
+    // 자녀가 둘 이상이면 '다른 자녀', 아니면 '뒤로'
+    document.getElementById('backLabel').textContent =
+      getSiblings().length > 1 ? '다른 자녀 선택' : '뒤로';
 
     // 화요일 배너 / 잠금
     currentCheckWeek = currentWeek;
@@ -635,6 +660,51 @@
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── 뒤로 가기 / 자녀 전환 ──
+  function getSiblings() {
+    try { return JSON.parse(localStorage.getItem('siblings') || '[]'); }
+    catch (e) { return []; }
+  }
+
+  /** 자녀가 둘 이상이면 선택 시트, 아니면 로그인 화면으로 */
+  function goBack() {
+    if (getSiblings().length > 1) openChildSheet();
+    else window.location.href = '/';
+  }
+
+  function openChildSheet() {
+    const list = document.getElementById('childSwitchList');
+    const curId = localStorage.getItem('studentId');
+    list.innerHTML = '';
+    getSiblings().forEach(s => {
+      const isCur = s.id === curId;
+      const el = document.createElement('div');
+      el.className = 'check-opt' + (isCur ? ' complete' : '');
+      el.style.cursor = 'pointer';
+      el.innerHTML = `
+        <div class="check-opt-ic" style="background:${isCur ? 'var(--p)' : 'var(--pl)'};color:${isCur ? '#fff' : 'var(--p)'};font-weight:900;font-size:15px">
+          ${s.name.slice(0, 1)}
+        </div>
+        <div>
+          <div class="check-opt-lbl">${s.name}${isCur ? ' <span style="font-size:11px;color:var(--p)">· 보는 중</span>' : ''}</div>
+          <div class="check-opt-desc">${s.grade || ''}</div>
+        </div>`;
+      el.onclick = () => switchChild(s.id, s.name);
+      list.appendChild(el);
+    });
+    document.getElementById('childOverlay').classList.add('show');
+  }
+
+  function closeChildSheet() { document.getElementById('childOverlay').classList.remove('show'); }
+  function hideChildSheet(e) { if (e.target === document.getElementById('childOverlay')) closeChildSheet(); }
+
+  function switchChild(id, name) {
+    if (id === localStorage.getItem('studentId')) { closeChildSheet(); return; }
+    localStorage.setItem('studentId', id);
+    localStorage.setItem('studentName', name);
+    location.reload();
   }
 
   function logout() { localStorage.clear(); window.location.href = '/'; }
