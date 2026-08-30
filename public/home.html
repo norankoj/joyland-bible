@@ -707,7 +707,13 @@
     location.reload();
   }
 
-  function logout() { localStorage.clear(); window.location.href = '/'; }
+  function logout() {
+    // '기억하기'로 저장해둔 PIN 은 로그아웃해도 남겨둡니다 (로그인 화면에서 다시 지울 수 있음)
+    const savedPin = localStorage.getItem('savedPin');
+    localStorage.clear();
+    if (savedPin) localStorage.setItem('savedPin', savedPin);
+    window.location.href = '/';
+  }
 
   init();
 </script>
