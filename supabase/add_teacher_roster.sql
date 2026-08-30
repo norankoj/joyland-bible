@@ -7,6 +7,8 @@
 -- → 자기 반(p_class) 학생만, 비밀번호가 맞을 때만 변경 가능합니다.
 --
 -- ⚠ 선행 조건: supabase/fix_security.sql 을 먼저 실행해두는 것을 권장합니다.
+-- ※ 함수 본문은 $$ 대신 $fn$ 으로 감쌉니다. 본문 안에 $ 기호가 있으면
+--   $$ 가 조기 종료되어 "unterminated dollar-quoted string" 오류가 납니다.
 
 
 -- ─────────────────────────────────────────────
@@ -17,7 +19,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 begin
   if not exists (
     select 1 from joyland_classes c
@@ -26,7 +28,7 @@ begin
     raise exception '반 비밀번호가 올바르지 않습니다.' using errcode = '28000';
   end if;
 end;
-$$;
+$fn$;
 revoke all on function joyland_assert_class(text, text) from public, anon, authenticated;
 
 
@@ -41,7 +43,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 begin
   perform joyland_assert_class(p_class, p_password);
   return query
@@ -50,14 +52,16 @@ begin
     where s.class_name = p_class
     order by s.grade, s.name;
 end;
-$$;
+$fn$;
 revoke all on function joyland_class_students(text, text) from public, anon, authenticated;
 grant execute on function joyland_class_students(text, text) to anon, authenticated;
 
 
 -- ─────────────────────────────────────────────
 -- 2. 학생 등록 / 수정 (p_id 가 null 이면 신규)
---    PIN = 전화 뒤 4자리 + 생일 MMDD (기존 규칙 유지)
+--    PIN = 전화 뒤 4자리 + 생일 MMDD
+--    ※ PIN 중복 검사 없음 — 쌍둥이는 같은 PIN 을 공유하며,
+--      로그인 시 '어떤 자녀인가요?' 선택 화면으로 구분됩니다.
 -- ─────────────────────────────────────────────
 create or replace function joyland_class_save_student(
   p_class       text,
@@ -74,9 +78,10 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 declare
   v_digits text;
+  v_bday   text;
   v_pin    text;
   v_id     uuid;
 begin
@@ -90,23 +95,29 @@ begin
   if length(v_digits) < 4 then
     raise exception '보호자 전화번호를 정확히 입력해주세요.';
   end if;
-  if coalesce(p_birthday, '') !~ '^[0-9]{4}$' then
-    raise exception '생일은 MMDD 4자리로 입력해주세요. (예: 0305)';
-  end if;
-  v_pin := right(v_digits, 4) || p_birthday;
 
-  -- ※ PIN 중복 검사 없음 — 쌍둥이는 같은 PIN 을 공유하며,
-  --    로그인 시 '어떤 자녀인가요?' 선택 화면으로 구분됩니다.
+  v_bday := coalesce(p_birthday, '');
+  if length(v_bday) <> 4 or v_bday ~ '[^0-9]' then
+    raise exception '생일은 MMDD 4자리 숫자로 입력해주세요. (예: 0305)';
+  end if;
+
+  v_pin := right(v_digits, 4) || v_bday;
 
   if p_id is null then
-    insert into joyland_students (name, grade, gender, phone, birthday, pin, parent_name, class_name, active)
-    values (trim(p_name), p_grade, p_gender, p_phone, p_birthday, v_pin, p_parent_name, p_class, true)
+    insert into joyland_students
+      (name, grade, gender, phone, birthday, pin, parent_name, class_name, active)
+    values
+      (trim(p_name), p_grade, p_gender, p_phone, v_bday, v_pin, p_parent_name, p_class, true)
     returning id into v_id;
   else
     -- 다른 반 학생을 건드리지 못하도록 class_name 조건 필수
     update joyland_students s
-       set name = trim(p_name), grade = p_grade, gender = p_gender,
-           phone = p_phone, birthday = p_birthday, pin = v_pin,
+       set name        = trim(p_name),
+           grade       = p_grade,
+           gender      = p_gender,
+           phone       = p_phone,
+           birthday    = v_bday,
+           pin         = v_pin,
            parent_name = p_parent_name
      where s.id = p_id and s.class_name = p_class
     returning s.id into v_id;
@@ -118,9 +129,11 @@ begin
 
   return v_id;
 end;
-$$;
-revoke all on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text) from public, anon, authenticated;
-grant execute on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text) to anon, authenticated;
+$fn$;
+revoke all on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text)
+  from public, anon, authenticated;
+grant execute on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text)
+  to anon, authenticated;
 
 
 -- ─────────────────────────────────────────────
@@ -134,7 +147,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 declare v_id uuid;
 begin
   perform joyland_assert_class(p_class, p_password);
@@ -146,6 +159,6 @@ begin
   end if;
   return true;
 end;
-$$;
+$fn$;
 revoke all on function joyland_class_set_active(text,text,uuid,boolean) from public, anon, authenticated;
 grant execute on function joyland_class_set_active(text,text,uuid,boolean) to anon, authenticated;

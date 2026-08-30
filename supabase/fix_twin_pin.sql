@@ -8,9 +8,13 @@
 --  그런데 joyland_class_save_student 가 PIN 중복을 오류로 막고 있어서
 --   · 선생님이 쌍둥이를 새로 등록할 수 없고
 --   · 기존 쌍둥이의 정보를 "수정"만 하려 해도 오류가 났습니다.
---     (자기 자신을 제외해도 형제가 같은 PIN 이라 중복으로 걸림)
 --
 -- [조치] PIN 중복 검사를 제거합니다. 중복은 로그인 시 자녀 선택으로 해결됩니다.
+--
+-- ※ 함수 본문을 $$ 대신 $fn$ 으로 감쌌습니다.
+--   본문 안에 $ 기호가 있으면 $$ 가 조기 종료되어
+--   "unterminated dollar-quoted string" 오류가 날 수 있기 때문입니다.
+--   같은 이유로 생일 검사도 정규식 끝의 $ 앵커를 쓰지 않도록 바꿨습니다.
 
 create or replace function joyland_class_save_student(
   p_class       text,
@@ -27,9 +31,10 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 declare
   v_digits text;
+  v_bday   text;
   v_pin    text;
   v_id     uuid;
 begin
@@ -43,22 +48,32 @@ begin
   if length(v_digits) < 4 then
     raise exception '보호자 전화번호를 정확히 입력해주세요.';
   end if;
-  if coalesce(p_birthday, '') !~ '^[0-9]{4}$' then
-    raise exception '생일은 MMDD 4자리로 입력해주세요. (예: 0305)';
-  end if;
-  v_pin := right(v_digits, 4) || p_birthday;
 
-  -- ※ PIN 중복 검사 없음 — 쌍둥이는 같은 PIN 을 공유하며,
-  --    로그인 시 '어떤 자녀인가요?' 선택 화면으로 구분됩니다.
+  v_bday := coalesce(p_birthday, '');
+  if length(v_bday) <> 4 or v_bday ~ '[^0-9]' then
+    raise exception '생일은 MMDD 4자리 숫자로 입력해주세요. (예: 0305)';
+  end if;
+
+  v_pin := right(v_digits, 4) || v_bday;
+
+  -- PIN 중복 검사 없음: 쌍둥이는 같은 PIN 을 공유하며,
+  -- 로그인 시 '어떤 자녀인가요?' 선택 화면으로 구분됩니다.
 
   if p_id is null then
-    insert into joyland_students (name, grade, gender, phone, birthday, pin, parent_name, class_name, active)
-    values (trim(p_name), p_grade, p_gender, p_phone, p_birthday, v_pin, p_parent_name, p_class, true)
+    insert into joyland_students
+      (name, grade, gender, phone, birthday, pin, parent_name, class_name, active)
+    values
+      (trim(p_name), p_grade, p_gender, p_phone, v_bday, v_pin, p_parent_name, p_class, true)
     returning id into v_id;
   else
+    -- 다른 반 학생을 건드리지 못하도록 class_name 조건 필수
     update joyland_students s
-       set name = trim(p_name), grade = p_grade, gender = p_gender,
-           phone = p_phone, birthday = p_birthday, pin = v_pin,
+       set name        = trim(p_name),
+           grade       = p_grade,
+           gender      = p_gender,
+           phone       = p_phone,
+           birthday    = v_bday,
+           pin         = v_pin,
            parent_name = p_parent_name
      where s.id = p_id and s.class_name = p_class
     returning s.id into v_id;
@@ -70,7 +85,9 @@ begin
 
   return v_id;
 end;
-$$;
+$fn$;
 
-revoke all on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text) from public, anon, authenticated;
-grant execute on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text) to anon, authenticated;
+revoke all on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text)
+  from public, anon, authenticated;
+grant execute on function joyland_class_save_student(text,text,uuid,text,text,text,text,text,text)
+  to anon, authenticated;
