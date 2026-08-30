@@ -62,7 +62,8 @@ create policy "joyland_semesters_delete" on joyland_semesters for delete using (
 -- 기록: 누구나 읽기/생성 (보호자 체크), 관리자만 수정·삭제
 create policy "joyland_records_read"   on joyland_records for select using (true);
 create policy "joyland_records_insert" on joyland_records for insert with check (true);
-create policy "joyland_records_update" on joyland_records for update using (auth.role() = 'authenticated');
+-- 학부모가 같은 날 안에서 완료↔부분완료를 바꿀 수 있어야 하므로 UPDATE 를 열어둡니다
+create policy "joyland_records_update" on joyland_records for update using (true) with check (true);
 create policy "joyland_records_delete" on joyland_records for delete using (auth.role() = 'authenticated');
 
 -- =============================================
