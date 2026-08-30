@@ -23,6 +23,28 @@
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+  /**
+   * 아이폰은 브라우저마다 '홈 화면에 추가' 위치가 달라서 안내를 다르게 해야 합니다.
+   * 카톡·네이버 등 앱 안에 내장된 브라우저는 아예 추가가 불가능합니다.
+   */
+  function iosBrowser() {
+    const ua = navigator.userAgent;
+    if (/KAKAOTALK/i.test(ua))              return { key: 'inapp', name: '카카오톡' };
+    if (/NAVER|Whale/i.test(ua))            return { key: 'inapp', name: '네이버' };
+    if (/Instagram|FBAN|FBAV|Line/i.test(ua)) return { key: 'inapp', name: '앱 내 브라우저' };
+    if (/CriOS/i.test(ua))                  return { key: 'chrome', name: '크롬' };
+    if (/EdgiOS/i.test(ua))                 return { key: 'chrome', name: '엣지' };
+    if (/FxiOS/i.test(ua))                  return { key: 'firefox', name: '파이어폭스' };
+    return { key: 'safari', name: '사파리' };
+  }
+
+  const IOS_GUIDE = {
+    safari:  '아래 <b>공유</b> 버튼 → <b>홈 화면에 추가</b>',
+    chrome:  '주소창 오른쪽 <b>공유</b> 버튼 → <b>홈 화면에 추가</b>',
+    firefox: '오른쪽 아래 <b>≡</b> → <b>공유</b> → <b>홈 화면에 추가</b>',
+    inapp:   '오른쪽 위 <b>⋯</b> → <b>다른 브라우저로 열기</b>(사파리·크롬) 후 추가해주세요'
+  };
+
   // 이미 앱으로 실행 중이거나, 사용자가 닫았으면 표시하지 않음
   if (isStandalone() || localStorage.getItem(DISMISS_KEY) === '1') return;
 
@@ -55,7 +77,8 @@
         border: none; background: none; color: rgba(255,255,255,.55);
         font-size: 20px; cursor: pointer; padding: 0 2px; line-height: 1; flex-shrink: 0;
       }
-      @media (max-width: 380px) { .pwa-s { display: none } }
+      .pwa-s b { color: #FFD580; font-weight: 800; }
+      @media (max-width: 380px) { .pwa-t { font-size: 12.5px } .pwa-s { font-size: 11px } }
     `;
     document.head.appendChild(st);
   }
@@ -65,13 +88,17 @@
     injectStyles();
     const bar = document.createElement('div');
     bar.className = 'pwa-bar';
-    const sub = mode === 'ios'
-      ? '아래 <b>공유</b> 버튼 → <b>홈 화면에 추가</b>'
-      : '홈 화면에 추가하면 앱처럼 열려요';
+    let title = `${NAME} 앱으로 설치`;
+    let sub = '홈 화면에 추가하면 앱처럼 열려요';
+    if (mode === 'ios') {
+      const b = iosBrowser();
+      sub = IOS_GUIDE[b.key];
+      if (b.key === 'inapp') title = `${NAME} — 사파리·크롬에서 설치해요`;
+    }
     bar.innerHTML = `
       <img class="pwa-ic" src="/icons/icon-${APP}-192.png" alt="">
       <div class="pwa-tx">
-        <div class="pwa-t">${NAME} 앱으로 설치</div>
+        <div class="pwa-t">${title}</div>
         <div class="pwa-s">${sub}</div>
       </div>
       ${mode === 'prompt' ? '<button class="pwa-btn" id="pwaInstall">설치</button>' : ''}
