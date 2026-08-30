@@ -423,7 +423,7 @@
               <div><div class="fl-lbl">학년</div>
                 <select class="fld" id="regGrade"><option>1학년</option><option>2학년</option><option>3학년</option><option>4학년</option><option>5학년</option><option>6학년</option></select>
               </div>
-              <div><div class="fl-lbl">성별</div><select class="fld" id="regGender"><option>남</option><option>여</option></select></div>
+              <div><div class="fl-lbl">성별</div><select class="fld" id="regGender"><option>남학생</option><option>여학생</option></select></div>
             </div>
             <div><div class="fl-lbl">보호자 전화번호</div><input class="fld" id="regPhone" type="tel" placeholder="010-0000-0000" oninput="updatePin()"/></div>
             <div><div class="fl-lbl">생일 4자리 (MMDD)</div>
@@ -462,7 +462,7 @@
                 <div><div class="fl-lbl">학년</div>
                   <select class="fld" id="esGrade"><option>1학년</option><option>2학년</option><option>3학년</option><option>4학년</option><option>5학년</option><option>6학년</option></select>
                 </div>
-                <div><div class="fl-lbl">성별</div><select class="fld" id="esGender"><option>남</option><option>여</option></select></div>
+                <div><div class="fl-lbl">성별</div><select class="fld" id="esGender"><option>남학생</option><option>여학생</option></select></div>
               </div>
               <div><div class="fl-lbl">반</div><input class="fld" id="esClass" placeholder="반 이름"/></div>
               <div><div class="fl-lbl">보호자 이름</div><input class="fld" id="esParent" placeholder="홍길동"/></div>
@@ -674,6 +674,18 @@
   }
 
   const calcWeek = calcWeekNum; // js/config.js 공통 유틸
+
+  /**
+   * 성별 표기 통일 — DB는 '남학생'/'여학생'을 씁니다.
+   * 예전 데이터나 엑셀에 '남'/'여'/'남자'/'M' 등이 들어와도 맞춰줍니다.
+   */
+  function normGender(v) {
+    const t = String(v ?? '').trim();
+    if (!t) return '남학생';
+    if (/^(남|남자|남학생|m|male)$/i.test(t)) return '남학생';
+    if (/^(여|여자|여학생|f|female)$/i.test(t)) return '여학생';
+    return t;
+  }
 
   let dashView = 'class';
   let expandedClass = null;
@@ -1067,7 +1079,7 @@
     editStuId = id;
     document.getElementById('esName').value = s.name;
     document.getElementById('esGrade').value = s.grade;
-    document.getElementById('esGender').value = s.gender;
+    document.getElementById('esGender').value = normGender(s.gender);
     document.getElementById('esClass').value = s.class_name || '';
     document.getElementById('esParent').value = s.parent_name || '';
     document.getElementById('esStuErr').style.display = 'none';
@@ -1083,7 +1095,7 @@
     if (!editStuId) return;
     const name = document.getElementById('esName').value.trim();
     const grade = document.getElementById('esGrade').value;
-    const gender = document.getElementById('esGender').value;
+    const gender = normGender(document.getElementById('esGender').value);
     const class_name = document.getElementById('esClass').value.trim() || null;
     const parent_name = document.getElementById('esParent').value.trim() || null;
     const errEl = document.getElementById('esStuErr');
@@ -1126,7 +1138,7 @@
   async function registerStudent() {
     const name  = document.getElementById('regName').value.trim();
     const grade = document.getElementById('regGrade').value;
-    const gender= document.getElementById('regGender').value;
+    const gender= normGender(document.getElementById('regGender').value);
     const phone = document.getElementById('regPhone').value.replace(/\D/g,'');
     const bday  = document.getElementById('regBday').value.trim();
     const errEl = document.getElementById('regErr');
@@ -1187,7 +1199,7 @@
     errEl.style.display='none'; okEl.style.display='none';
     const rows = xlsxRows.map(r => {
       const ph=String(r[3]||'').replace(/\D/g,''), bd=String(r[4]||'').padStart(4,'0');
-      return { name:String(r[0]||'').trim(), grade:String(r[1]||'').trim(), gender:String(r[2]||'').trim(), phone:ph, birthday:bd, pin:ph.slice(-4)+bd, active:true };
+      return { name:String(r[0]||'').trim(), grade:String(r[1]||'').trim(), gender:normGender(r[2]), phone:ph, birthday:bd, pin:ph.slice(-4)+bd, active:true };
     }).filter(r => r.name && r.phone.length>=10 && r.birthday.length===4);
 
     const { error } = await sb.from('joyland_students').insert(rows);
@@ -1603,7 +1615,7 @@
   function downloadTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
       ['이름', '학년', '성별', '부모님 전화번호', '아이 생일'],
-      ['김인호', '1학년', '남', '010-1234-1234', '0305']
+      ['김인호', '1학년', '남학생', '010-1234-1234', '0305']
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '학생명단');
