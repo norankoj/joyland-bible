@@ -226,6 +226,22 @@
       #attScroll  { max-height:calc(100vh - 320px); }
     }
 
+    /* ── 이번 주 반별 체크 상황 ── */
+    .acg { display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:9px; }
+    .ac-card { background:var(--bg); border:1.5px solid var(--bdr); border-radius:13px; padding:12px 13px; }
+    .ac-card.done  { border-color:#A7E8CE; background:#F3FCF8; }
+    .ac-card.part  { border-color:#FFD9A8; background:#FFFBF3; }
+    .ac-card.none  { border-color:#FBC7C7; background:#FFF5F5; }
+    .ac-top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .ac-nm { font-size:13px; font-weight:800; }
+    .ac-cnt { font-size:12px; font-weight:800; white-space:nowrap; }
+    .ac-card.done .ac-cnt { color:#129A6B; }
+    .ac-card.part .ac-cnt { color:#D08C1E; }
+    .ac-card.none .ac-cnt { color:#E15252; }
+    .ac-bar { background:var(--bdr); border-radius:99px; height:6px; overflow:hidden; }
+    .ac-fill { height:100%; border-radius:99px; transition:width .4s; }
+    .ac-tc { font-size:11px; color:var(--sub); margin-top:6px; }
+
     /* ── 출석 셀 인라인 편집 ── */
     .att-cell { cursor:pointer; transition:background .12s; }
     .att-cell:hover { background:rgba(123,79,232,.10); }
@@ -370,6 +386,12 @@
       <div class="pg-t">출석 현황</div>
       <div class="pg-s" id="attSub"></div>
       <div class="stat-row" id="attStatRow"></div>
+
+      <!-- 이번 주 반별 체크 진행 상황 -->
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px" id="attWeekTitle">이번 주 반별 체크 상황</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">아직 출석을 넣지 않은 반이 빨갛게 표시됩니다.</div>
+      <div id="attClassGrid" style="margin-bottom:22px"></div>
+
       <div style="font-size:15px;font-weight:800;margin-bottom:4px">주차별 출석 현황</div>
       <div style="font-size:12px;color:var(--sub);margin-bottom:10px">✏️ 표의 출석 칸을 클릭하면 출석·지각·결석을 바로 수정할 수 있습니다. (모임 후 지각 보정용)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
@@ -1267,6 +1289,7 @@
     const specialSet = specialWeekSet(sem);   // 테스트 주차까지 통계에서 제외
     document.getElementById('attSub').textContent = `${sem.year}년 ${sem.semester}학기 · ${currentWeek}주차 진행 중`;
 
+    renderAttClassGrid(currentWeek);
     populateAttFilters();
 
     // 통계 (전체 학생 기준, 방학 주차 제외)
@@ -1383,6 +1406,57 @@
       </tr>`;
     });
     document.getElementById('attTbody').innerHTML = tbHtml || '<tr><td colspan="100" style="text-align:center;padding:24px;color:var(--sub)">검색 결과 없음</td></tr>';
+  }
+
+  /**
+   * 이번 주 반별 출석 체크 진행 상황
+   * 화요일 저녁에 "아직 안 찍은 반"을 한눈에 보기 위한 카드
+   */
+  function renderAttClassGrid(week) {
+    const el = document.getElementById('attClassGrid');
+    const titleEl = document.getElementById('attWeekTitle');
+    if (!el || !semester) return;
+
+    const label = weekTypeLabel(semester, week);
+    titleEl.textContent = `${week}주차 (${fmtShortDate(weekCheckDateObj(semester, week))}) 반별 체크 상황`;
+
+    // 개강·방학·종강 주차는 출석을 받지 않음
+    if (noCheckWeekSet(semester).has(week)) {
+      el.innerHTML = `<div style="font-size:13px;color:var(--sub);padding:14px 2px">${label} 주간이라 출석 체크를 받지 않습니다.</div>`;
+      return;
+    }
+
+    const byClass = {};
+    students.filter(s => s.active).forEach(s => {
+      const c = s.class_name || '미배정';
+      if (!byClass[c]) byClass[c] = { total: 0, done: 0 };
+      byClass[c].total++;
+      if (attData[s.id]?.[week]) byClass[c].done++;
+    });
+
+    const names = Object.keys(byClass).sort((a, b) => a.localeCompare(b, 'ko'));
+    if (!names.length) { el.innerHTML = ''; return; }
+
+    // 미처리 반을 앞으로
+    names.sort((a, b) => (byClass[a].done / byClass[a].total) - (byClass[b].done / byClass[b].total));
+
+    const pending = names.filter(n => byClass[n].done < byClass[n].total).length;
+    let html = `<div style="font-size:12px;margin-bottom:9px;font-weight:700;color:${pending ? '#E15252' : '#129A6B'}">`
+      + (pending ? `아직 ${pending}개 반이 남았습니다` : '모든 반이 체크를 마쳤습니다 ✓') + '</div><div class="acg">';
+
+    names.forEach(n => {
+      const { total, done } = byClass[n];
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const cls = done === 0 ? 'none' : done < total ? 'part' : 'done';
+      const color = cls === 'done' ? '#2DC38C' : cls === 'part' ? '#F0A93C' : '#EF4444';
+      const info = classes.find(c => c.name === n);
+      html += `<div class="ac-card ${cls}">
+        <div class="ac-top"><span class="ac-nm">${n}</span><span class="ac-cnt">${done}/${total}</span></div>
+        <div class="ac-bar"><div class="ac-fill" style="width:${pct}%;background:${color}"></div></div>
+        ${info?.teacher_name ? `<div class="ac-tc">${info.teacher_name}</div>` : ''}
+      </div>`;
+    });
+    el.innerHTML = html + '</div>';
   }
 
   // ── 출석 인라인 편집 (디렉터가 모임 후 지각 등을 보정) ──
