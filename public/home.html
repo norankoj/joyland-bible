@@ -80,6 +80,33 @@
     .sec-t { font-size: 15px; font-weight: 800; margin-bottom: 14px; }
     .sec-hint { font-size: 11px; color: var(--p); font-weight: 700; background: var(--pl); padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; }
 
+    /* 이번 주 읽을 본문 */
+    .sched-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 0; border-bottom: 1px solid #F0EBFF;
+    }
+    .sched-row:last-child { border-bottom: none; }
+    .sched-row.today { background: var(--pl); margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 12px; border-bottom-color: transparent; }
+    .sched-d {
+      flex-shrink: 0; width: 52px; font-size: 12px; font-weight: 800; color: var(--sub);
+    }
+    .sched-row.today .sched-d { color: var(--p); }
+    .sched-p { flex: 1; font-size: 13.5px; font-weight: 700; color: var(--text); }
+    .sched-row.meet .sched-p { color: var(--sub); font-weight: 600; }
+    .sched-badge {
+      flex-shrink: 0; font-size: 10px; font-weight: 800; color: var(--p);
+      background: var(--pl); padding: 3px 8px; border-radius: 99px;
+    }
+    .sched-note { font-size: 11px; color: var(--sub); margin-top: 10px; line-height: 1.6; }
+    .sched-more {
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      width: 100%; margin-top: 10px; padding: 9px;
+      border: 1.5px solid var(--bdr); border-radius: 12px; background: none;
+      font-family: inherit; font-size: 12px; font-weight: 700; color: var(--sub); cursor: pointer;
+    }
+    .sched-more:active { background: var(--pl); color: var(--p); }
+    .sched-more svg { transition: transform .2s; }
+
     .stamp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
     .stamp {
       aspect-ratio: 1; border-radius: 50%;
@@ -229,6 +256,12 @@
       <div class="pr-bg"><div class="pr-fill" id="progressBar" style="width:0%"></div></div>
     </div>
 
+    <!-- 이번 주 읽을 본문 -->
+    <div class="sec" id="schedSec" style="display:none;padding-bottom:8px">
+      <div class="sec-t" id="schedTitle">이번 주 읽을 본문</div>
+      <div id="schedList"></div>
+    </div>
+
     <div class="sec">
       <div class="sec-t">통독주차</div>
       <div class="sec-hint" id="stampHint" style="display:none"></div>
@@ -322,6 +355,82 @@
     const mon = new Date(tue); mon.setUTCDate(tue.getUTCDate() - 1);
     return `${fmtDate(wed)} ~ ${fmtDate(mon)}`;
   }
+
+  /** 1~3학년 = 저학년(low), 4~6학년 = 고학년(high) */
+  function gradeGroup(grade) {
+    const n = parseInt(grade, 10);
+    return n >= 4 ? 'high' : 'low';
+  }
+
+  const ymd = d => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+
+  /**
+   * 이번 주 읽을 본문
+   * 스케줄은 '화요모임 → 다음 월요일'이 한 묶음이므로
+   * 가장 최근 화요일(오늘이 화요일이면 오늘)부터 7일치를 보여줍니다.
+   */
+  async function loadSchedule() {
+    if (!student) return;
+    const sec = document.getElementById('schedSec');
+
+    const kst = kstNow();
+    const start = new Date(kst);
+    start.setUTCDate(kst.getUTCDate() - ((kst.getUTCDay() - CHECK_DAY + 7) % 7)); // 최근 화요일
+    const end = new Date(start); end.setUTCDate(start.getUTCDate() + 6);          // 다음 월요일
+    const group = gradeGroup(student.grade);
+
+    const { data, error } = await sb.from('joyland_schedule')
+      .select('read_date, passage')
+      .eq('grade_group', group)
+      .gte('read_date', ymd(start))
+      .lte('read_date', ymd(end))
+      .order('read_date');
+
+    if (error || !data || !data.length) { sec.style.display = 'none'; return; }
+    renderSchedule(data, group, start, end);
+    sec.style.display = 'block';
+  }
+
+  let schedRows = [], schedRange = '', schedOpen = false;
+
+  function renderSchedule(rows, group, wed, tue) {
+    schedRows = rows;
+    schedRange = `${fmtDate(wed)} ~ ${fmtDate(tue)}`;
+    document.getElementById('schedTitle').textContent =
+      `이번 주 읽을 본문 · ${group === 'high' ? '고학년' : '저학년'}`;
+    drawSchedule();
+  }
+
+  function drawSchedule() {
+    const DAYS = ['일','월','화','수','목','금','토'];
+    const todayKst = ymd(kstNow());
+    // 접힌 상태에서는 오늘 것만 (오늘 자료가 없으면 첫 줄)
+    const shown = schedOpen
+      ? schedRows
+      : [schedRows.find(r => r.read_date === todayKst) || schedRows[0]].filter(Boolean);
+
+    let html = '';
+    shown.forEach(r => {
+      const d = new Date(r.read_date + 'T00:00:00Z');
+      const isToday = r.read_date === todayKst;
+      const isMeet = /모임/.test(r.passage);
+      html += `<div class="sched-row${isToday ? ' today' : ''}${isMeet ? ' meet' : ''}">
+        <div class="sched-d">${d.getUTCMonth()+1}/${d.getUTCDate()}(${DAYS[d.getUTCDay()]})</div>
+        <div class="sched-p">${r.passage}</div>
+        ${isToday ? '<span class="sched-badge">오늘</span>' : ''}
+      </div>`;
+    });
+    if (schedOpen) html += `<div class="sched-note">${schedRange} 분량이에요.</div>`;
+    if (schedRows.length > 1) {
+      html += `<button class="sched-more" onclick="toggleSchedule()">
+        ${schedOpen ? '접기' : '이번 주 전체 보기'}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${schedOpen ? 180 : 0}deg)"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>`;
+    }
+    document.getElementById('schedList').innerHTML = html;
+  }
+
+  function toggleSchedule() { schedOpen = !schedOpen; drawSchedule(); }
 
   async function init() {
     const studentId = localStorage.getItem('studentId');
@@ -446,6 +555,7 @@
     }
     renderStamps(totalWeeks, isTue, currentWeek);
     renderHistory(totalWeeks, currentWeek);
+    loadSchedule();
   }
 
   function renderStamps(totalWeeks, isTue, currentWeek) {

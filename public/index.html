@@ -125,15 +125,23 @@
 
     // 저장해둔 PIN 이 있으면 미리 채워둡니다 (이 기기에만 저장됩니다)
     (function restorePin() {
+      const input = document.getElementById('pinInput');
       const saved = localStorage.getItem('savedPin');
       const box = document.getElementById('rememberPin');
       if (saved) {
-        document.getElementById('pinInput').value = saved;
+        input.value = saved;
         box.checked = true;
       }
+      // ⚠ 미리 채워진 8자리가 maxlength 를 이미 채우고 있어서
+      //   다른 자녀 PIN 을 입력해도 글자가 들어가지 않는 문제가 있었습니다.
+      //   → 입력칸을 누르면 전체 선택되어 바로 새로 칠 수 있게 합니다.
+      const selectAll = () => { if (input.value) input.select(); };
+      input.addEventListener('focus', selectAll);
+      input.addEventListener('click', selectAll);
+
       // 체크를 끄면 저장된 PIN 을 즉시 지웁니다
       box.addEventListener('change', () => {
-        if (!box.checked) localStorage.removeItem('savedPin');
+        if (!box.checked) { localStorage.removeItem('savedPin'); input.value = ''; input.focus(); }
       });
     })();
 
