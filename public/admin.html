@@ -530,7 +530,9 @@
       <div class="aw-info">
         📖 <b>통독상</b> — 🐓 성실상: 전체 주차 완료 · 🐔 노력상: 딱 1회만 부분완료<br>
         🎯 <b>출석상</b> — ⭐ 전체 출석 (지각 1회까지 인정, 결석·미처리 시 제외)<br>
-        <span style="color:var(--sub)">※ 개강·방학·종강 주차와 아직 오지 않은 주차는 계산에서 제외됩니다.</span>
+        <span style="color:var(--sub)">
+        ※ 통독은 <b>3주차부터</b> (개강·테스트·방학·종강 제외) · 출석은 <b>2주차부터</b> (개강·방학·종강 제외) 계산됩니다.<br>
+        ※ 아직 오지 않은 주차는 계산에서 제외됩니다.</span>
       </div>
       <div id="awardResult"></div>
       <button class="btn btn-g btn-full" style="margin-top:8px" onclick="exportAwards()">📋 시상 명단 엑셀 내보내기</button>
@@ -1329,7 +1331,8 @@
     const openSet   = new Set(sem.opening_weeks || []);
     const closeSet  = new Set(sem.closing_weeks || []);
     const testSet   = new Set(sem.test_weeks || []);
-    const specialSet = specialWeekSet(sem);   // 테스트 주차까지 통계에서 제외
+    // 출석 통계는 시상 기준과 동일하게 개강·방학·종강만 제외 (테스트 주간에도 모임은 있었음)
+    const specialSet = noCheckWeekSet(sem);
     document.getElementById('attSub').textContent = `${sem.year}년 ${sem.semester}학기 · ${currentWeek}주차 진행 중`;
 
     renderAttClassGrid(currentWeek);
@@ -1697,37 +1700,54 @@
   function calcAwards() {
     const sem = semester;
     if (!sem) return null;
-    const specialSet = specialWeekSet(sem);
     const curWeek = Math.min(calcWeek(sem), sem.total_weeks);
-    // 지금까지 진행된 주차 중 시상에 포함되는 주차 목록
-    const gradedWeeks = [];
-    for (let w = 1; w <= curWeek; w++) if (!specialSet.has(w)) gradedWeeks.push(w);
-    // 학기 전체 기준 시상 대상 주차 수 (진도율 표시용)
-    const totalGraded = sem.total_weeks - specialSet.size;
+
+    // 통독 시상 제외: 개강 · 방학 · 종강 · 테스트  → 이번 학기는 3주차부터
+    const readSkip = specialWeekSet(sem);
+    // 출석 시상 제외: 개강 · 방학 · 종강 (테스트 주간에도 모임은 있었으므로 포함)
+    //                                        → 이번 학기는 2주차부터
+    const attSkip  = noCheckWeekSet(sem);
+
+    const readWeeks = [], attWeeks = [];
+    for (let w = 1; w <= curWeek; w++) {
+      if (!readSkip.has(w)) readWeeks.push(w);
+      if (!attSkip.has(w))  attWeeks.push(w);
+    }
+    const totalGraded    = sem.total_weeks - readSkip.size;
+    const totalGradedAtt = sem.total_weeks - attSkip.size;
 
     const diligent = [], effort = [], attendees = [];
     students.filter(s => s.active).forEach(s => {
       const recs = records[s.id] || {};
       const atts = attData[s.id] || {};
-      let done = 0, partial = 0, present = 0, late = 0, absent = 0, attMissing = 0;
-      gradedWeeks.forEach(w => {
+
+      // 통독
+      let done = 0, partial = 0;
+      readWeeks.forEach(w => {
         if (recs[w] === 'done') done++;
         else if (recs[w] === 'partial') partial++;
+      });
+      if (readWeeks.length > 0) {
+        if (done === readWeeks.length && partial === 0) diligent.push({ s, done });
+        else if (partial === 1 && done === readWeeks.length - 1) effort.push({ s, done, partial });
+      }
+
+      // 출석 — 결석 0 · 미처리 0 · 지각 1회 이하
+      let present = 0, late = 0, absent = 0, attMissing = 0;
+      attWeeks.forEach(w => {
         const a = atts[w];
         if (a === '출석') present++;
         else if (a === '지각') late++;
         else if (a === '결석') absent++;
-        else attMissing++; // 미처리 = 출석 인정 불가
+        else attMissing++;
       });
-      // 통독: 진행된 모든 주차를 완료(부분완료 0) / 부분완료 딱 1회
-      if (gradedWeeks.length > 0) {
-        if (done === gradedWeeks.length && partial === 0) diligent.push({ s, done });
-        else if (partial === 1 && done === gradedWeeks.length - 1) effort.push({ s, done, partial });
-        // 출석: 결석 0 · 미처리 0 · 지각 1회 이하
-        if (absent === 0 && attMissing === 0 && late <= 1) attendees.push({ s, present, late });
+      if (attWeeks.length > 0 && absent === 0 && attMissing === 0 && late <= 1) {
+        attendees.push({ s, present, late });
       }
     });
-    return { diligent, effort, attendees, gradedWeeks, totalGraded, curWeek, specialSet };
+    return { diligent, effort, attendees,
+             gradedWeeks: readWeeks, attWeeks, totalGraded, totalGradedAtt,
+             curWeek, specialSet: readSkip };
   }
 
   function renderAwards() {
@@ -1739,10 +1759,11 @@
       return;
     }
     const a = calcAwards();
+    const wk = list => list.length ? `${list[0]}~${list[list.length-1]}주차` : '없음';
     document.getElementById('awardSub').textContent =
-      `${sem.year}년 ${sem.semester}학기 · ${a.curWeek}주차 진행 중 · 시상 대상 ${a.gradedWeeks.length}/${a.totalGraded}주 평가`;
+      `${sem.year}년 ${sem.semester}학기 · ${a.curWeek}주차 진행 중 · 통독 ${wk(a.gradedWeeks)} / 출석 ${wk(a.attWeeks)} 기준`;
 
-    if (!a.gradedWeeks.length) {
+    if (!a.gradedWeeks.length && !a.attWeeks.length) {
       result.innerHTML = '<div style="color:var(--sub);font-size:14px;padding:20px 0">아직 평가할 주차가 없습니다. (개강·방학 주차는 시상에서 제외됩니다)</div>';
       return;
     }
@@ -1754,8 +1775,9 @@
     let html = '';
 
     // ── 통독상 ──
-    html += `<div class="aw-sec">📖 통독상 <span style="font-weight:600;color:var(--sub);font-size:12px">· ${a.gradedWeeks.length}주 기준</span></div>`;
-    if (a.diligent.length || a.effort.length) {
+    html += `<div class="aw-sec">📖 통독상 <span style="font-weight:600;color:var(--sub);font-size:12px">· ${wk(a.gradedWeeks)} · ${a.gradedWeeks.length}주 평가</span></div>`;
+    if (!a.gradedWeeks.length) html += empty('통독 시상은 3주차부터 계산됩니다. (개강·테스트 주차 제외)');
+    else if (a.diligent.length || a.effort.length) {
       a.diligent.forEach(({ s, done }) =>
         html += card('🐓', s.name, s.grade, `${done}주 전체 완료`, '성실상', 'background:#EDFAF4;color:#2DC38C'));
       a.effort.forEach(({ s, done }) =>
@@ -1763,8 +1785,9 @@
     } else html += empty('아직 통독상 대상자가 없습니다.');
 
     // ── 출석상 ──
-    html += `<div class="aw-sec" style="margin-top:22px">🎯 출석상 <span style="font-weight:600;color:var(--sub);font-size:12px">· 전체 출석, 지각 1회까지 인정</span></div>`;
-    if (a.attendees.length) {
+    html += `<div class="aw-sec" style="margin-top:22px">🎯 출석상 <span style="font-weight:600;color:var(--sub);font-size:12px">· ${wk(a.attWeeks)} · 지각 1회까지 인정</span></div>`;
+    if (!a.attWeeks.length) html += empty('출석 시상은 2주차부터 계산됩니다. (개강 주차 제외)');
+    else if (a.attendees.length) {
       a.attendees.forEach(({ s, present, late }) =>
         html += card('⭐', s.name, s.grade, late === 0 ? `${present}주 전체 출석` : `출석 ${present}주 · 지각 1회`, '출석상', 'background:#EFF6FF;color:#2563EB'));
     } else html += empty('아직 출석상 대상자가 없습니다.');
