@@ -242,6 +242,17 @@
     .ac-bar { background:var(--bdr); border-radius:99px; height:6px; overflow:hidden; }
     .ac-fill { height:100%; border-radius:99px; transition:width .4s; }
     .ac-tc { font-size:11px; color:var(--sub); margin-top:6px; }
+    .ac-sum { font-size:13px; font-weight:800; margin-bottom:10px; }
+    .ac-sum.pend { color:#E15252; }
+    .ac-sum.ok   { color:#129A6B; }
+    .sched-more {
+      display:flex; align-items:center; justify-content:center; gap:4px;
+      width:100%; padding:9px; border:1.5px solid var(--bdr); border-radius:12px;
+      background:none; font-family:inherit; font-size:12px; font-weight:700;
+      color:var(--sub); cursor:pointer;
+    }
+    .sched-more:hover { background:var(--surface); }
+    .sched-more svg { transition:transform .2s; }
     .ac-empty {
       background:var(--surface); border:1.5px solid var(--bdr); border-radius:13px;
       padding:18px 16px; text-align:center;
@@ -1328,7 +1339,7 @@
     let okCount = 0, lateCount = 0, absentCount = 0;
     // 이번 주 인원수
     let wkOk = 0, wkLate = 0, wkAbsent = 0, wkNone = 0;
-    students.forEach(s => {
+    students.filter(s => s.active).forEach(s => {
       const recs = attData[s.id] || {};
       for (let w = 1; w <= currentWeek; w++) {
         if (specialSet.has(w)) continue;
@@ -1337,7 +1348,7 @@
         else if (st === '지각') lateCount++;
         else if (st === '결석') absentCount++;
       }
-      if (s.active) {
+      {
         const st = recs[currentWeek];
         if (st === '출석') wkOk++;
         else if (st === '지각') wkLate++;
@@ -1346,10 +1357,11 @@
       }
     });
     const effectiveWeeks = Array.from({length: currentWeek}, (_, i) => i+1).filter(w => !specialSet.has(w)).length;
-    const expectedTotal = students.length * effectiveWeeks;
+    const activeCount = students.filter(s => s.active).length;
+    const expectedTotal = activeCount * effectiveWeeks;
     const attRate = expectedTotal > 0 ? Math.round(((okCount + lateCount) / expectedTotal) * 100) : 0;
-    const thisWeekRecs = students.filter(s => attData[s.id]?.[currentWeek]).length;
-    const thisWeekRate = students.length > 0 ? Math.round((thisWeekRecs / students.length) * 100) : 0;
+    const thisWeekRecs = students.filter(s => s.active && attData[s.id]?.[currentWeek]).length;
+    const thisWeekRate = activeCount > 0 ? Math.round((thisWeekRecs / activeCount) * 100) : 0;
 
     const badgeHtml = (status, isBreak, isOpen, isClose, isFuture) => {
       if (isBreak) return `<span class="bdg break">방학</span>`;
@@ -1365,25 +1377,34 @@
     const noCheckNow = noCheckWeekSet(sem).has(currentWeek);
     const weekLabel = `${currentWeek}주차 (${fmtShortDate(weekCheckDateObj(sem, currentWeek))})`;
 
-    document.getElementById('attStatRow').innerHTML = `
-      <div class="stat-card"><div class="st-n" style="color:var(--p)">${attRate}%</div><div class="st-l">학기 전체 출석률</div></div>
-      <div class="stat-card"><div class="st-n" style="color:#FF8C42">${lateCount}</div><div class="st-l">누적 지각</div></div>
-      <div class="stat-card"><div class="st-n" style="color:#EF4444">${absentCount}</div><div class="st-l">누적 결석</div></div>
-    `;
+    // 학기 누적 — 집계 대상 주차가 아직 없으면 숫자 대신 안내
+    const cumEl = document.getElementById('attStatRow');
+    if (effectiveWeeks === 0) {
+      cumEl.className = '';
+      cumEl.innerHTML = `<div class="ac-empty" style="margin-bottom:24px">
+        아직 집계할 주차가 없습니다. 개강·방학·테스트 주차는 통계에서 제외됩니다.</div>`;
+    } else {
+      cumEl.className = 'stat-row';
+      cumEl.innerHTML = `
+        <div class="stat-card"><div class="st-n" style="color:var(--p)">${attRate}%</div><div class="st-l">학기 전체 출석률 <span style="opacity:.7">· ${effectiveWeeks}주 기준</span></div></div>
+        <div class="stat-card"><div class="st-n" style="color:#FF8C42">${lateCount}<span class="st-u">회</span></div><div class="st-l">누적 지각</div></div>
+        <div class="stat-card"><div class="st-n" style="color:#EF4444">${absentCount}<span class="st-u">회</span></div><div class="st-l">누적 결석</div></div>
+      `;
+    }
 
     const wkEl = document.getElementById('attWeekStatRow');
+    const wkTitle = document.getElementById('attWeekStatTitle');
     if (noCheckNow) {
       wkEl.innerHTML = '';
-      document.getElementById('attWeekStatTitle').style.display = 'none';
+      wkTitle.style.display = 'none';
     } else {
-      document.getElementById('attWeekStatTitle').style.display = '';
-      document.getElementById('attWeekStatTitle').textContent = `${weekLabel} 출석 인원`;
+      wkTitle.style.display = '';
+      wkTitle.textContent = `${weekLabel} 출석 인원`;
       wkEl.innerHTML = `
         <div class="stat-card"><div class="st-n" style="color:#2DC38C">${wkOk}<span class="st-u">명</span></div><div class="st-l">출석</div></div>
         <div class="stat-card"><div class="st-n" style="color:#FF8C42">${wkLate}<span class="st-u">명</span></div><div class="st-l">지각</div></div>
         <div class="stat-card"><div class="st-n" style="color:#EF4444">${wkAbsent}<span class="st-u">명</span></div><div class="st-l">결석</div></div>
         <div class="stat-card"><div class="st-n" style="color:var(--sub)">${wkNone}<span class="st-u">명</span></div><div class="st-l">미처리</div></div>
-        <div class="stat-card"><div class="st-n" style="color:var(--p)">${thisWeekRate}%</div><div class="st-l">체크 완료율</div></div>
       `;
     }
 
@@ -1413,7 +1434,9 @@
     const cf = document.getElementById('attClassFilter')?.value || '';
 
     // 출석률 계산 (방학 제외, 진행된 주차까지만)
-    let rows = students.map(s => {
+    // 비활성(퇴록) 학생은 출석 현황에서 제외
+    const activeList = students.filter(s => s.active);
+    let rows = activeList.map(s => {
       const recs = attData[s.id] || {};
       let ok = 0, late = 0, denom = 0;
       for (let w = 1; w <= currentWeek; w++) {
@@ -1443,7 +1466,7 @@
 
     const countEl = document.getElementById('attCount');
     const filtered = (q || gf || cf);
-    if (countEl) countEl.textContent = filtered ? `${rows.length}명 검색됨 (전체 ${students.length}명)` : `총 ${students.length}명`;
+    if (countEl) countEl.textContent = filtered ? `${rows.length}명 검색됨 (전체 ${activeList.length}명)` : `총 ${activeList.length}명`;
 
     // 바디
     let tbHtml = '';
@@ -1497,26 +1520,44 @@
     const names = Object.keys(byClass).sort((a, b) => a.localeCompare(b, 'ko'));
     if (!names.length) { el.innerHTML = ''; return; }
 
-    // 미처리 반을 앞으로
-    names.sort((a, b) => (byClass[a].done / byClass[a].total) - (byClass[b].done / byClass[b].total));
+    const pendingNames = names.filter(n => byClass[n].done < byClass[n].total);
+    const doneNames    = names.filter(n => byClass[n].done === byClass[n].total);
 
-    const pending = names.filter(n => byClass[n].done < byClass[n].total).length;
-    let html = `<div style="font-size:12px;margin-bottom:9px;font-weight:700;color:${pending ? '#E15252' : '#129A6B'}">`
-      + (pending ? `아직 ${pending}개 반이 남았습니다` : '모든 반이 체크를 마쳤습니다 ✓') + '</div><div class="acg">';
-
-    names.forEach(n => {
+    const card = n => {
       const { total, done } = byClass[n];
       const pct = total ? Math.round(done / total * 100) : 0;
       const cls = done === 0 ? 'none' : done < total ? 'part' : 'done';
       const color = cls === 'done' ? '#2DC38C' : cls === 'part' ? '#F0A93C' : '#EF4444';
       const info = classes.find(c => c.name === n);
-      html += `<div class="ac-card ${cls}">
+      return `<div class="ac-card ${cls}">
         <div class="ac-top"><span class="ac-nm">${n}</span><span class="ac-cnt">${done}/${total}</span></div>
         <div class="ac-bar"><div class="ac-fill" style="width:${pct}%;background:${color}"></div></div>
         ${info?.teacher_name ? `<div class="ac-tc">${info.teacher_name}</div>` : ''}
       </div>`;
-    });
-    el.innerHTML = html + '</div>';
+    };
+
+    let html = '';
+    if (pendingNames.length) {
+      html += `<div class="ac-sum pend">아직 ${pendingNames.length}개 반이 남았습니다</div>`;
+      html += `<div class="acg">${pendingNames.map(card).join('')}</div>`;
+    } else {
+      html += `<div class="ac-sum ok">모든 반이 체크를 마쳤습니다 ✓</div>`;
+    }
+    // 완료된 반은 기본으로 접어둡니다 (평소엔 볼 일이 없으므로)
+    if (doneNames.length) {
+      html += `<button class="sched-more" style="margin-top:${pendingNames.length ? 12 : 8}px" onclick="toggleDoneClasses()">
+        완료 ${doneNames.length}개 반 ${acDoneOpen ? '접기' : '보기'}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${acDoneOpen ? 180 : 0}deg)"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>`;
+      if (acDoneOpen) html += `<div class="acg" style="margin-top:10px">${doneNames.map(card).join('')}</div>`;
+    }
+    el.innerHTML = html;
+  }
+
+  let acDoneOpen = false;
+  function toggleDoneClasses() {
+    acDoneOpen = !acDoneOpen;
+    renderAttClassGrid(Math.min(calcWeek(semester), semester.total_weeks));
   }
 
   // ── 출석 인라인 편집 (디렉터가 모임 후 지각 등을 보정) ──
