@@ -166,8 +166,9 @@
     .cs-t.open svg { transform:rotate(180deg); }
     /* 폼 안(.fld)에서는 입력칸과 같은 크기로 */
     .cs.fld-size .cs-t { padding:12px 14px; font-size:14px; border-radius:10px; background:var(--surface); }
+    /* 모달·표의 overflow 에 잘리지 않도록 fixed 로 띄웁니다 (위치는 JS 가 지정) */
     .cs-l {
-      position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:300;
+      position:fixed; z-index:400;
       background:var(--bg); border:1px solid var(--bdr); border-radius:8px;
       box-shadow:0 10px 30px rgba(20,12,50,.16);
       max-height:280px; overflow-y:auto; display:none; padding:4px;
@@ -492,17 +493,17 @@
       <div style="font-size:15px;font-weight:800;margin-bottom:4px">주차별 출석 현황</div>
       <div style="font-size:12px;color:var(--sub);margin-bottom:10px">✏️ 표의 출석 칸을 클릭하면 출석·지각·결석을 바로 수정할 수 있습니다. (모임 후 지각 보정용)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
-        <div style="position:relative;flex:1;min-width:160px">
+        <div style="position:relative;flex:0 1 190px;min-width:130px">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input id="attSearch" type="text" placeholder="이름 검색…" oninput="renderAttendance()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
         </div>
-        <select id="attGradeFilter" onchange="renderAttendance()" class="sel">
+        <select id="attGradeFilter" onchange="renderAttendance()" class="sel" style="flex:1 1 120px">
           <option value="">전체 학년</option>
         </select>
-        <select id="attClassFilter" onchange="renderAttendance()" class="sel">
+        <select id="attClassFilter" onchange="renderAttendance()" class="sel" style="flex:1 1 150px">
           <option value="">전체 반</option>
         </select>
-        <select id="attStatusFilter" onchange="renderAttendance()" class="sel">
+        <select id="attStatusFilter" onchange="renderAttendance()" class="sel" style="flex:1 1 120px">
           <option value="">전체 상태</option>
           <option value="출석">출석</option>
           <option value="지각">지각</option>
@@ -2190,6 +2191,8 @@
     sel.dataset.cs = '1';
     const wrap = document.createElement('div');
     wrap.className = 'cs' + (sel.classList.contains('fld') ? ' fld-size' : '');
+    // select 에 준 flex 값은 감싸는 요소가 이어받아야 배치가 유지됨
+    if (sel.style.flex) { wrap.style.flex = sel.style.flex; sel.style.flex = ''; }
     sel.parentNode.insertBefore(wrap, sel);
     wrap.appendChild(sel);
 
@@ -2217,8 +2220,25 @@
         };
       });
       trig.classList.add('open'); list.classList.add('open');
+      placeSelectList(trig, list);
     };
     syncSelect(sel);
+  }
+
+  /** 트리거 기준으로 위치를 잡되, 넓은 쪽으로 펼치고 화면 안에 맞춤 */
+  function placeSelectList(trig, list) {
+    const M = 8;                                   // 화면 가장자리 여백
+    const r = trig.getBoundingClientRect();
+    list.style.maxHeight = '';
+    list.style.width = r.width + 'px';
+    list.style.left = Math.max(M, Math.min(r.left, window.innerWidth - r.width - M)) + 'px';
+
+    const below = window.innerHeight - r.bottom - M - 4;
+    const above = r.top - M - 4;
+    const openDown = below >= Math.min(list.scrollHeight, 280) || below >= above;
+    const room = Math.min(280, openDown ? below : above);
+    list.style.maxHeight = room + 'px';
+    list.style.top = (openDown ? r.bottom + 4 : Math.max(M, r.top - room - 4)) + 'px';
   }
 
   /** 트리거 글자를 현재 선택값으로 맞춤 */
@@ -2232,6 +2252,9 @@
   }
   document.addEventListener('click', closeAllSelects);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllSelects(); });
+  // fixed 로 띄우므로 스크롤하면 트리거와 어긋납니다 → 닫기
+  document.addEventListener('scroll', closeAllSelects, true);
+  window.addEventListener('resize', closeAllSelects);
 
   /** 새로 생긴 select 을 감싸고, 값이 바뀐 것들은 글자를 갱신 */
   function refreshSelects() {
