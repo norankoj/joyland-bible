@@ -1461,7 +1461,8 @@
     const cSel = document.getElementById('attClassFilter');
     if (!gSel || !cSel) return;
     const gVal = gSel.value, cVal = cSel.value;
-    gSel.innerHTML = '<option value="">전체 학년</option>' + grades.map(g=>`<option value="${g}">${g}학년</option>`).join('');
+    // grade 값 자체가 '1학년' 형태라 '학년'을 덧붙이면 '1학년학년'이 됩니다
+    gSel.innerHTML = '<option value="">전체 학년</option>' + grades.map(g=>`<option value="${g}">${g}</option>`).join('');
     cSel.innerHTML = '<option value="">전체 반</option>' + clsNames.map(c=>`<option value="${c}">${c}</option>`).join('');
     gSel.value = gVal; cSel.value = cVal;
     refreshSelects();
