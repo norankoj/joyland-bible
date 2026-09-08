@@ -149,6 +149,18 @@
     .btn-sm { padding:9px 16px; font-size:13px; border-radius:10px; }
     .btn-danger { background:#FEE2E2; color:#991B1B; border:none; }
 
+    /* 학생 목록 — 색을 줄이고 톤을 낮춤 */
+    .stu-pin { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; letter-spacing:1px; color:var(--text); }
+    .stu-st { font-size:11px; padding:3px 9px; border-radius:6px; font-weight:700; background:var(--surface); color:var(--sub); }
+    .stu-st.off { opacity:.65; }
+    .stu-off td { opacity:.5; }
+    .stu-btn {
+      border:1px solid var(--bdr); background:var(--bg); border-radius:7px;
+      padding:6px 11px; font-family:inherit; font-size:12px; font-weight:600;
+      color:var(--sub); cursor:pointer;
+    }
+    .stu-btn:hover { background:var(--surface); color:var(--text); }
+
     /* 메시지 */
     .msg { border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:14px; display:none; }
     .msg.err { background:#FEE2E2; color:#991B1B; }
@@ -436,9 +448,6 @@
       <div class="pg-s" id="attSub"></div>
       <div style="font-size:15px;font-weight:800;margin-bottom:10px" id="attWeekStatTitle">이번 주 출석 인원</div>
       <div class="stat-row" id="attWeekStatRow"></div>
-
-      <div style="font-size:15px;font-weight:800;margin-bottom:10px">학기 누적</div>
-      <div class="stat-row" id="attStatRow"></div>
 
       <!-- 이번 주 반별 체크 진행 상황 -->
       <div style="font-size:15px;font-weight:800;margin-bottom:4px" id="attWeekTitle">이번 주 반별 체크 상황</div>
@@ -1178,20 +1187,19 @@
     if (countEl) countEl.textContent = q ? `${list.length}명 검색됨` : `총 ${list.length}명`;
 
     let html = '';
+    const dash = '<span style="color:var(--bdr)">—</span>';
     list.forEach(s => {
-      const statusBg = s.active ? '#D1FAE5' : '#F3F4F6';
-      const statusColor = s.active ? '#065F46' : '#9CA3AF';
-      html += `<tr>
+      html += `<tr${s.active ? '' : ' class="stu-off"'}>
         <td style="font-weight:700">${s.name}</td>
-        <td class="${grClass(s.grade)}" style="font-weight:700">${s.grade}</td>
-        <td>${s.gender}</td>
-        <td>${s.class_name || '<span style="color:var(--bdr)">—</span>'}</td>
-        <td style="font-size:12px;color:var(--sub)">${s.parent_name || '<span style="color:var(--bdr)">—</span>'}</td>
-        <td style="letter-spacing:2px;font-weight:700;color:var(--p);font-size:12px">${s.pin}</td>
-        <td><span style="font-size:11px;padding:4px 10px;border-radius:99px;font-weight:700;background:${statusBg};color:${statusColor}">${s.active?'재학':'비활성'}</span></td>
+        <td style="color:var(--sub)">${s.grade}</td>
+        <td style="color:var(--sub)">${s.gender}</td>
+        <td>${s.class_name || dash}</td>
+        <td style="color:var(--sub)">${s.parent_name || dash}</td>
+        <td class="stu-pin">${s.pin}</td>
+        <td><span class="stu-st${s.active ? '' : ' off'}">${s.active ? '재학' : '비활성'}</span></td>
         <td style="display:flex;gap:6px">
-          <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;padding:7px 12px;font-size:12px" onclick="openEditStu('${s.id}')">수정</button>
-          <button class="btn btn-sm btn-danger" style="padding:7px 12px;font-size:12px" onclick="toggleStudent('${s.id}',${s.active})">${s.active?'비활성':'복원'}</button>
+          <button class="stu-btn" onclick="openEditStu('${s.id}')">수정</button>
+          <button class="stu-btn" onclick="toggleStudent('${s.id}',${s.active})">${s.active ? '비활성' : '복원'}</button>
         </td>
       </tr>`;
     });
@@ -1470,45 +1478,24 @@
     const noCheckNow = noCheckWeekSet(sem).has(currentWeek);
     const weekLabel = `${currentWeek}주차 (${fmtShortDate(weekCheckDateObj(sem, currentWeek))})`;
 
-    // 학기 누적 — 집계 대상 주차가 아직 없으면 숫자 대신 안내
-    const cumEl = document.getElementById('attStatRow');
-    if (effectiveWeeks === 0) {
-      cumEl.className = '';
-      cumEl.innerHTML = `<div class="ac-empty" style="margin-bottom:24px">
-        아직 집계할 주차가 없습니다. 개강·방학·테스트 주차는 통계에서 제외됩니다.</div>`;
-    } else {
-      cumEl.className = 'stat-row';
-      // 시상 기준이 '결석 0 · 지각 1회 이하'라, 전체 합계보다 '몇 명이 탈락했는지'가 유용
-      let outCnt = 0;
-      students.filter(s => s.active).forEach(s => {
-        const r = attData[s.id] || {};
-        let ab = 0, lt = 0;
-        for (let w = 1; w <= currentWeek; w++) {
-          if (specialSet.has(w)) continue;
-          if (r[w] === '결석') ab++; else if (r[w] === '지각') lt++;
-        }
-        if (ab > 0 || lt > 1) outCnt++;
-      });
-      cumEl.innerHTML = `
-        <div class="stat-card"><div class="st-n" style="color:var(--p)">${attRate}%</div><div class="st-l">학기 전체 출석률 <span style="opacity:.7">· ${effectiveWeeks}주 기준</span></div></div>
-        <div class="stat-card"><div class="st-n" style="color:#2DC38C">${activeCount - outCnt}<span class="st-u">명</span></div><div class="st-l">출석상 유지 중</div></div>
-        <div class="stat-card"><div class="st-n" style="color:var(--sub)">${outCnt}<span class="st-u">명</span></div><div class="st-l">출석상 조건 이탈</div></div>
-      `;
-    }
+    // 학기 누적 출석률은 이번 주 인원 카드 끝에 하나만 붙입니다
+    const cumCard = effectiveWeeks === 0
+      ? `<div class="stat-card"><div class="st-n" style="color:var(--sub)">—</div><div class="st-l">학기 출석률 <span style="opacity:.7">· 집계 전</span></div></div>`
+      : `<div class="stat-card"><div class="st-n" style="color:var(--p)">${attRate}%</div><div class="st-l">학기 출석률 <span style="opacity:.7">· ${effectiveWeeks}주</span></div></div>`;
 
     const wkEl = document.getElementById('attWeekStatRow');
     const wkTitle = document.getElementById('attWeekStatTitle');
     if (noCheckNow) {
-      wkEl.innerHTML = '';
-      wkTitle.style.display = 'none';
+      wkEl.innerHTML = cumCard;
+      wkTitle.textContent = `${weekLabel} · 출석을 받지 않는 주간`;
     } else {
-      wkTitle.style.display = '';
       wkTitle.textContent = `${weekLabel} 출석 인원`;
       wkEl.innerHTML = `
         <div class="stat-card"><div class="st-n" style="color:#2DC38C">${wkOk}<span class="st-u">명</span></div><div class="st-l">출석</div></div>
         <div class="stat-card"><div class="st-n" style="color:#FF8C42">${wkLate}<span class="st-u">명</span></div><div class="st-l">지각</div></div>
         <div class="stat-card"><div class="st-n" style="color:#EF4444">${wkAbsent}<span class="st-u">명</span></div><div class="st-l">결석</div></div>
         <div class="stat-card"><div class="st-n" style="color:var(--sub)">${wkNone}<span class="st-u">명</span></div><div class="st-l">미처리</div></div>
+        ${cumCard}
       `;
     }
 
