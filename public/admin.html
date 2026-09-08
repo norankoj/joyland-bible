@@ -466,7 +466,7 @@
           <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
           <input id="checkSearch" type="text" placeholder="이름 검색…" oninput="renderCheckTable()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
         </div>
-        <select id="checkClassFilter" onchange="renderCheckTable()" class="sel">
+        <select id="checkClassFilter" onchange="renderCheckTable()" class="sel" style="flex:0 0 168px">
           <option value="">전체 반</option>
         </select>
         <div id="checkCount" style="font-size:12px;color:var(--sub);white-space:nowrap"></div>
@@ -493,17 +493,17 @@
       <div style="font-size:15px;font-weight:800;margin-bottom:4px">주차별 출석 현황</div>
       <div style="font-size:12px;color:var(--sub);margin-bottom:10px">✏️ 표의 출석 칸을 클릭하면 출석·지각·결석을 바로 수정할 수 있습니다. (모임 후 지각 보정용)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
-        <div style="position:relative;flex:0 1 190px;min-width:130px">
+        <div style="position:relative;flex:1 1 260px;min-width:200px">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input id="attSearch" type="text" placeholder="이름 검색…" oninput="renderAttendance()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
         </div>
-        <select id="attGradeFilter" onchange="renderAttendance()" class="sel" style="flex:1 1 120px">
+        <select id="attGradeFilter" onchange="renderAttendance()" class="sel" style="flex:0 0 118px">
           <option value="">전체 학년</option>
         </select>
-        <select id="attClassFilter" onchange="renderAttendance()" class="sel" style="flex:1 1 150px">
+        <select id="attClassFilter" onchange="renderAttendance()" class="sel" style="flex:0 0 168px">
           <option value="">전체 반</option>
         </select>
-        <select id="attStatusFilter" onchange="renderAttendance()" class="sel" style="flex:1 1 120px">
+        <select id="attStatusFilter" onchange="renderAttendance()" class="sel" style="flex:0 0 128px">
           <option value="">전체 상태</option>
           <option value="출석">출석</option>
           <option value="지각">지각</option>
@@ -2252,8 +2252,12 @@
   }
   document.addEventListener('click', closeAllSelects);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllSelects(); });
-  // fixed 로 띄우므로 스크롤하면 트리거와 어긋납니다 → 닫기
-  document.addEventListener('scroll', closeAllSelects, true);
+  // fixed 로 띄우므로 바깥이 스크롤되면 트리거와 어긋납니다 → 닫기.
+  // 단, 목록 안에서 굴리는 스크롤은 항목을 고르는 중이므로 그대로 둡니다.
+  document.addEventListener('scroll', e => {
+    if (e.target instanceof Element && e.target.closest('.cs-l')) return;
+    closeAllSelects();
+  }, true);
   window.addEventListener('resize', closeAllSelects);
 
   /** 새로 생긴 select 을 감싸고, 값이 바뀐 것들은 글자를 갱신 */
