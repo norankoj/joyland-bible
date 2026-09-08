@@ -230,7 +230,7 @@
     .cls-mini-pc { font-size:11px; color:var(--p); font-weight:700; margin-top:2px; }
 
     /* 테이블 현재 주차 강조 */
-    .tbl th.cur-week { background:rgba(123,79,232,.12); color:var(--p); font-weight:800; }
+    .tbl th.cur-week { background:#E4DAFF; color:var(--p); font-weight:800; }
     .tbl td.cur-week { background:rgba(123,79,232,.04); }
 
     /* 학년 색상 */
@@ -247,7 +247,7 @@
     .tbl-scroll::-webkit-scrollbar-thumb { background:var(--bdr); border-radius:99px; }
     /* 헤더 sticky: border-collapse:separate 일 때만 동작함 */
     .tbl-scroll .tbl th { position:sticky; top:0; z-index:3; background:var(--pl); }
-    .tbl-scroll .tbl th.cur-week { background:rgba(123,79,232,.12); }
+    .tbl-scroll .tbl th.cur-week { background:#E4DAFF; }
     .tbl-scroll .tbl th:first-child { z-index:5; }
     /* PC: 테이블 세로 고정 높이 */
     @media (min-width:641px) {
@@ -457,6 +457,13 @@
         </select>
         <select id="attClassFilter" onchange="renderAttendance()" style="padding:9px 10px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;cursor:pointer">
           <option value="">전체 반</option>
+        </select>
+        <select id="attStatusFilter" onchange="renderAttendance()" style="padding:9px 10px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;cursor:pointer">
+          <option value="">전체 상태</option>
+          <option value="출석">출석</option>
+          <option value="지각">지각</option>
+          <option value="결석">결석</option>
+          <option value="미처리">미처리</option>
         </select>
       </div>
       <div id="attCount" style="font-size:12px;color:var(--sub);margin-bottom:8px"></div>
@@ -1471,10 +1478,21 @@
         아직 집계할 주차가 없습니다. 개강·방학·테스트 주차는 통계에서 제외됩니다.</div>`;
     } else {
       cumEl.className = 'stat-row';
+      // 시상 기준이 '결석 0 · 지각 1회 이하'라, 전체 합계보다 '몇 명이 탈락했는지'가 유용
+      let outCnt = 0;
+      students.filter(s => s.active).forEach(s => {
+        const r = attData[s.id] || {};
+        let ab = 0, lt = 0;
+        for (let w = 1; w <= currentWeek; w++) {
+          if (specialSet.has(w)) continue;
+          if (r[w] === '결석') ab++; else if (r[w] === '지각') lt++;
+        }
+        if (ab > 0 || lt > 1) outCnt++;
+      });
       cumEl.innerHTML = `
         <div class="stat-card"><div class="st-n" style="color:var(--p)">${attRate}%</div><div class="st-l">학기 전체 출석률 <span style="opacity:.7">· ${effectiveWeeks}주 기준</span></div></div>
-        <div class="stat-card"><div class="st-n" style="color:#FF8C42">${lateCount}<span class="st-u">회</span></div><div class="st-l">누적 지각</div></div>
-        <div class="stat-card"><div class="st-n" style="color:#EF4444">${absentCount}<span class="st-u">회</span></div><div class="st-l">누적 결석</div></div>
+        <div class="stat-card"><div class="st-n" style="color:#2DC38C">${activeCount - outCnt}<span class="st-u">명</span></div><div class="st-l">출석상 유지 중</div></div>
+        <div class="stat-card"><div class="st-n" style="color:var(--sub)">${outCnt}<span class="st-u">명</span></div><div class="st-l">출석상 조건 이탈</div></div>
       `;
     }
 
@@ -1508,7 +1526,7 @@
       const isCls  = closeSet.has(w);
       const isTst  = testSet.has(w);
       const isCur  = w === currentWeek;
-      const style  = isBrk ? 'background:#FEF3C7;color:#92400E' : isOpn ? 'background:#EDFAF4;color:var(--green)' : isCls ? 'background:#FFF0F3;color:#F43F5E' : isTst ? 'background:#EFF6FF;color:#2563EB' : isCur ? 'background:rgba(123,79,232,.1);color:var(--p)' : '';
+      const style  = isBrk ? 'background:#FEF3C7;color:#92400E' : isOpn ? 'background:#EDFAF4;color:var(--green)' : isCls ? 'background:#FFF0F3;color:#F43F5E' : isTst ? 'background:#EFF6FF;color:#2563EB' : isCur ? 'background:#E4DAFF;color:var(--pd)' : '';
       thHtml += `<th style="white-space:nowrap;${style ? style+';' : ''}">${w}주<br><span style="font-size:10px;font-weight:400;opacity:.75">${weekDate(w)}</span>${isTst ? '<br><span style="font-size:9px;font-weight:800">테스트</span>' : ''}</th>`;
     }
     thHtml += `<th style="white-space:nowrap;${thS}" onclick="attSort('rate')">출석률${si('rate')}</th></tr>`;
@@ -1518,6 +1536,7 @@
     const q = (document.getElementById('attSearch')?.value || '').trim().toLowerCase();
     const gf = document.getElementById('attGradeFilter')?.value || '';
     const cf = document.getElementById('attClassFilter')?.value || '';
+    const sf = document.getElementById('attStatusFilter')?.value || '';
 
     // 출석률 계산 (방학 제외, 진행된 주차까지만)
     // 비활성(퇴록) 학생은 출석 현황에서 제외
@@ -1539,6 +1558,8 @@
     if (q)  rows = rows.filter(({ s }) => s.name.toLowerCase().includes(q));
     if (gf) rows = rows.filter(({ s }) => (s.grade || '') === gf);
     if (cf) rows = rows.filter(({ s }) => (s.class_name || '') === cf);
+    // 상태 필터는 '이번 주' 기준 (누가 이번 주에 결석했나 보려는 용도)
+    if (sf) rows = rows.filter(({ recs }) => (recs[currentWeek] || '미처리') === sf);
 
     rows.sort((a, b) => {
       let va, vb;
@@ -1551,7 +1572,7 @@
     });
 
     const countEl = document.getElementById('attCount');
-    const filtered = (q || gf || cf);
+    const filtered = (q || gf || cf || sf);
     if (countEl) countEl.textContent = filtered ? `${rows.length}명 검색됨 (전체 ${activeList.length}명)` : `총 ${activeList.length}명`;
 
     // 바디
