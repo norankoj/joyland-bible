@@ -539,8 +539,16 @@
                 </div>
                 <div><div class="fl-lbl">성별</div><select class="fld" id="esGender"><option>남학생</option><option>여학생</option></select></div>
               </div>
-              <div><div class="fl-lbl">반</div><input class="fld" id="esClass" placeholder="반 이름"/></div>
+              <div><div class="fl-lbl">반</div><select class="fld" id="esClass"></select></div>
               <div><div class="fl-lbl">보호자 이름</div><input class="fld" id="esParent" placeholder="홍길동"/></div>
+              <div class="fld-row">
+                <div><div class="fl-lbl">보호자 전화번호</div>
+                  <input class="fld" id="esPhone" type="tel" placeholder="010-0000-0000" oninput="updateEsPin()"/></div>
+                <div><div class="fl-lbl">생일 4자리 (MMDD)</div>
+                  <input class="fld" id="esBday" type="tel" inputmode="numeric" maxlength="4" placeholder="0305"
+                    style="letter-spacing:6px;font-weight:800;color:var(--p)" oninput="updateEsPin()"/></div>
+              </div>
+              <div class="pin-pre" id="esPinPre">🔐 PIN: <b>- - - -</b></div>
             </div>
             <div id="esStuErr" class="msg err"></div>
             <div style="display:flex;gap:8px;margin-top:18px">
@@ -1124,11 +1132,11 @@
     document.getElementById('stuThead').innerHTML = `<tr>
       <th style="${thStyle}" onclick="stuSort('name')">이름${stuSortInd('name')}</th>
       <th style="${thStyle}" onclick="stuSort('grade')">학년${stuSortInd('grade')}</th>
-      <th>성별</th>
+      <th style="${thStyle}" onclick="stuSort('gender')">성별${stuSortInd('gender')}</th>
       <th style="${thStyle}" onclick="stuSort('class')">반${stuSortInd('class')}</th>
-      <th>부모님</th>
-      <th>PIN</th>
-      <th>상태</th>
+      <th style="${thStyle}" onclick="stuSort('parent')">부모님${stuSortInd('parent')}</th>
+      <th style="${thStyle}" onclick="stuSort('pin')">PIN${stuSortInd('pin')}</th>
+      <th style="${thStyle}" onclick="stuSort('active')">상태${stuSortInd('active')}</th>
       <th>관리</th>
     </tr>`;
 
@@ -1144,9 +1152,20 @@
       ? students.filter(s => { const h = haystack(s); return terms.every(t => h.includes(t)); })
       : students.slice();
 
-    if (stuSortCol === 'name')  list.sort((a,b) => stuSortDir * a.name.localeCompare(b.name, 'ko'));
-    else if (stuSortCol === 'grade') list.sort((a,b) => stuSortDir * (parseInt(a.grade) - parseInt(b.grade)));
-    else if (stuSortCol === 'class') list.sort((a,b) => stuSortDir * (a.class_name||'').localeCompare(b.class_name||'', 'ko'));
+    const KEY = {
+      name:   s => s.name || '',
+      grade:  s => parseInt(s.grade) || 0,
+      gender: s => s.gender || '',
+      class:  s => s.class_name || '',
+      parent: s => s.parent_name || '',
+      pin:    s => s.pin || '',
+      active: s => (s.active ? 0 : 1),
+    };
+    const key = KEY[stuSortCol];
+    if (key) list.sort((a, b) => {
+      const x = key(a), y = key(b);
+      return stuSortDir * (typeof x === 'string' ? x.localeCompare(y, 'ko') : x - y);
+    });
 
     const countEl = document.getElementById('stuCount');
     if (countEl) countEl.textContent = q ? `${list.length}명 검색됨` : `총 ${list.length}명`;
@@ -1175,6 +1194,15 @@
 
   let editStuId = null;
 
+  /** 전화 뒤4자리 + 생일 → PIN 미리보기 */
+  function updateEsPin() {
+    const ph = document.getElementById('esPhone').value.replace(/\D/g, '');
+    const bd = document.getElementById('esBday').value.replace(/\D/g, '');
+    const ok = ph.length >= 4 && bd.length === 4;
+    document.getElementById('esPinPre').innerHTML =
+      `🔐 PIN: <b style="letter-spacing:2px">${ok ? ph.slice(-4) + bd : '- - - -'}</b>`;
+  }
+
   function openEditStu(id) {
     const s = students.find(x => x.id === id);
     if (!s) return;
@@ -1182,8 +1210,20 @@
     document.getElementById('esName').value = s.name;
     document.getElementById('esGrade').value = s.grade;
     document.getElementById('esGender').value = normGender(s.gender);
-    document.getElementById('esClass').value = s.class_name || '';
     document.getElementById('esParent').value = s.parent_name || '';
+    document.getElementById('esPhone').value = s.phone || '';
+    document.getElementById('esBday').value = s.birthday || '';
+    updateEsPin();
+
+    // 반 목록은 등록된 반에서 불러옵니다 (미배정도 선택 가능)
+    const sel = document.getElementById('esClass');
+    sel.innerHTML = '<option value="">미배정</option>'
+      + classes.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    // 목록에 없는 반이면 그대로 유지되도록 항목을 추가
+    if (s.class_name && !classes.some(c => c.name === s.class_name))
+      sel.insertAdjacentHTML('beforeend', `<option value="${s.class_name}">${s.class_name}</option>`);
+    sel.value = s.class_name || '';
+
     document.getElementById('esStuErr').style.display = 'none';
     document.getElementById('editStuPanel').style.display = 'flex';
   }
@@ -1198,12 +1238,20 @@
     const name = document.getElementById('esName').value.trim();
     const grade = document.getElementById('esGrade').value;
     const gender = normGender(document.getElementById('esGender').value);
-    const class_name = document.getElementById('esClass').value.trim() || null;
+    const class_name = document.getElementById('esClass').value || null;
     const parent_name = document.getElementById('esParent').value.trim() || null;
+    const phone = document.getElementById('esPhone').value.trim();
+    const birthday = document.getElementById('esBday').value.trim();
     const errEl = document.getElementById('esStuErr');
     if (!name) { showMsg(errEl, '이름을 입력해주세요.'); return; }
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 4) { showMsg(errEl, '보호자 전화번호를 확인해주세요.'); return; }
+    if (!/^\d{4}$/.test(birthday)) { showMsg(errEl, '생일은 4자리 숫자(MMDD)로 입력해주세요.'); return; }
+    // PIN 은 전화 뒤4자리+생일 규칙으로 다시 만듭니다 (쌍둥이는 중복 허용)
+    const pin = digits.slice(-4) + birthday;
     loading(true);
-    const { error } = await sb.from('joyland_students').update({ name, grade, gender, class_name, parent_name }).eq('id', editStuId);
+    const { error } = await sb.from('joyland_students')
+      .update({ name, grade, gender, class_name, parent_name, phone, birthday, pin }).eq('id', editStuId);
     loading(false);
     if (error) { showMsg(errEl, '오류: ' + error.message); return; }
     closeEditStu();
@@ -1604,6 +1652,10 @@
   function closeAttEditor() {
     if (attPopEl) { attPopEl.remove(); attPopEl = null; }
     document.removeEventListener('click', outsideAttPop, true);
+    // 팝업은 position:fixed 라 스크롤하면 표를 따라가지 못하고 헤더 위에 남습니다 → 닫기
+    document.removeEventListener('scroll', closeAttEditor, true);
+    window.removeEventListener('scroll', closeAttEditor, true);
+    window.removeEventListener('resize', closeAttEditor);
   }
 
   function outsideAttPop(e) {
@@ -1636,6 +1688,9 @@
     });
     attPopEl = pop;
     setTimeout(() => document.addEventListener('click', outsideAttPop, true), 0);
+    document.addEventListener('scroll', closeAttEditor, true);
+    window.addEventListener('scroll', closeAttEditor, true);
+    window.addEventListener('resize', closeAttEditor);
   }
 
   /** 통독 기록 인라인 편집 (학부모 오입력 보정) */
@@ -1664,6 +1719,9 @@
     });
     attPopEl = pop;
     setTimeout(() => document.addEventListener('click', outsideAttPop, true), 0);
+    document.addEventListener('scroll', closeAttEditor, true);
+    window.addEventListener('scroll', closeAttEditor, true);
+    window.addEventListener('resize', closeAttEditor);
   }
 
   async function saveRecCell(studentId, week, status) {
