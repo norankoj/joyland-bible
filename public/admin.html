@@ -2023,12 +2023,19 @@
     // 반 정보 목록
     const el = document.getElementById('clsSettingList');
     if (!classes.length) { el.innerHTML = '<div style="color:var(--sub);font-size:13px">등록된 반이 없습니다.</div>'; return; }
+    // 학년 → 반 이름 순으로 정렬 (학년 없는 반은 뒤로)
+    const sorted = [...classes].sort((a, b) =>
+      (parseInt(a.grade) || 99) - (parseInt(b.grade) || 99) || a.name.localeCompare(b.name, 'ko'));
+
+    const gradeOpts = g => ['', '1학년','2학년','3학년','4학년','5학년','6학년']
+      .map(v => `<option value="${v}"${v === (g || '') ? ' selected' : ''}>${v || '학년 미지정'}</option>`).join('');
+
     let html = '<div style="display:flex;flex-direction:column;gap:10px">';
-    classes.forEach(c => {
+    sorted.forEach(c => {
       html += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:10px;border:1px solid var(--bdr)">
-        <span style="font-size:13px;font-weight:800;min-width:100px">${c.name}</span>
-        <input class="fld" placeholder="학년 (예: 1학년)" value="${c.grade||''}" id="cg-${c.id}"
-          style="flex:1;min-width:100px;padding:8px 12px;font-size:13px"/>
+        <select class="sel" id="cg-${c.id}" style="flex:0 0 120px">${gradeOpts(c.grade)}</select>
+        <input class="fld" placeholder="반 이름" value="${c.name}" id="cn-${c.id}" data-orig="${c.name}"
+          style="flex:1;min-width:120px;padding:8px 12px;font-size:13px;font-weight:700"/>
         <input class="fld" placeholder="선생님 이름" value="${c.teacher_name||''}" id="ct-${c.id}"
           style="flex:1;min-width:120px;padding:8px 12px;font-size:13px"/>
         <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;padding:8px 14px;font-size:12px"
@@ -2037,15 +2044,43 @@
     });
     html += '</div>';
     el.innerHTML = html;
+    refreshSelects();
   }
 
   async function saveClassInfo(id) {
-    const grade = document.getElementById('cg-'+id).value.trim() || null;
+    const nameEl = document.getElementById('cn-'+id);
+    const name = nameEl.value.trim();
+    const orig = nameEl.dataset.orig;
+    const grade = document.getElementById('cg-'+id).value || null;
     const teacher_name = document.getElementById('ct-'+id).value.trim() || null;
-    const { error } = await sb.from('joyland_classes').update({ grade, teacher_name }).eq('id', id);
-    if (error) { showToast('오류: ' + error.message); return; }
-    showToast('저장되었습니다.');
-    await loadAll();
+
+    if (!name) { showToast('반 이름을 입력해주세요.'); return; }
+
+    // 반 이름은 학생 정보(class_name)가 그대로 참조하므로 함께 바꿔야 합니다
+    const renamed = name !== orig;
+    if (renamed) {
+      const n = students.filter(s => s.class_name === orig).length;
+      if (!confirm(`반 이름을 "${orig}" → "${name}" 으로 바꿉니다.\n`
+        + `소속 학생 ${n}명의 반도 함께 변경됩니다.\n\n`
+        + `※ 해당 반 선생님은 다시 로그인해야 합니다.\n\n계속할까요?`)) return;
+    }
+
+    loading(true);
+    try {
+      const { error } = await sb.from('joyland_classes')
+        .update({ name, grade, teacher_name }).eq('id', id);
+      if (error) throw error;
+
+      if (renamed) {
+        const { error: e2 } = await sb.from('joyland_students')
+          .update({ class_name: name }).eq('class_name', orig);
+        if (e2) throw new Error('반 이름은 바뀌었지만 학생 반 정보 변경에 실패했습니다: ' + e2.message);
+      }
+      showToast('저장되었습니다.');
+      await loadAll();
+    } catch (e) {
+      showToast(/duplicate|unique/i.test(e.message) ? '같은 이름의 반이 이미 있습니다.' : '오류: ' + e.message);
+    } finally { loading(false); }
   }
 
   async function createSemester() {
