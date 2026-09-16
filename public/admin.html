@@ -775,7 +775,8 @@
       ]);
       semester = semRes.data?.[0] || null;
       students = stRes.data || [];
-      classes  = clsRes.data || [];
+      // DB 정렬은 '10조'를 '1조'보다 앞에 두므로 숫자를 숫자로 보는 정렬로 다시 맞춤
+      classes  = (clsRes.data || []).sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true }));
 
       records = {};
       attData = {};
@@ -866,7 +867,7 @@
       if (!classMap[cls]) classMap[cls] = [];
       classMap[cls].push(s);
     });
-    const classNames = Object.keys(classMap).sort((a,b) => a.localeCompare(b, 'ko'));
+    const classNames = Object.keys(classMap).sort((a,b) => a.localeCompare(b, 'ko', { numeric: true }));
 
     // 현재 주차 기준 통계
     const weekStat = s => {
@@ -1054,7 +1055,7 @@
     const sel = document.getElementById('checkClassFilter');
     if (!sel) return;
     const names = [...new Set(students.filter(s => s.active).map(s => s.class_name).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, 'ko'));
+      .sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
     const cur = sel.value;
     sel.innerHTML = '<option value="">전체 반</option>'
       + names.map(n => `<option value="${n}">${n}</option>`).join('');
@@ -1120,7 +1121,7 @@
       }
       return d;
     };
-    if (sortCol === 'name')  list.sort((a, b) => sortDir * a.name.localeCompare(b.name, 'ko'));
+    if (sortCol === 'name')  list.sort((a, b) => sortDir * a.name.localeCompare(b.name, 'ko', { numeric: true }));
     else if (sortCol === 'grade') list.sort((a, b) => sortDir * (parseInt(a.grade) - parseInt(b.grade)));
     else if (sortCol === 'done' || sortCol === 'rate') list.sort((a, b) => sortDir * (getDone(a) - getDone(b)));
 
@@ -1222,7 +1223,7 @@
     const key = KEY[stuSortCol];
     if (key) list.sort((a, b) => {
       const x = key(a), y = key(b);
-      return stuSortDir * (typeof x === 'string' ? x.localeCompare(y, 'ko') : x - y);
+      return stuSortDir * (typeof x === 'string' ? x.localeCompare(y, 'ko', { numeric: true }) : x - y);
     });
 
     const countEl = document.getElementById('stuCount');
@@ -1456,7 +1457,7 @@
 
   function populateAttFilters() {
     const grades = [...new Set(students.map(s => s.grade).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
-    const clsNames = [...new Set(students.map(s => s.class_name).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ko'));
+    const clsNames = [...new Set(students.map(s => s.class_name).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'ko', { numeric: true }));
     const gSel = document.getElementById('attGradeFilter');
     const cSel = document.getElementById('attClassFilter');
     if (!gSel || !cSel) return;
@@ -1603,7 +1604,7 @@
       else if (attSortCol === 'class_name') { va = a.s.class_name||''; vb = b.s.class_name||''; }
       else if (attSortCol === 'rate')  { va = a.rate; vb = b.rate; }
       else { va = a.s.name; vb = b.s.name; }
-      return typeof va === 'string' ? va.localeCompare(vb,'ko') * attSortDir : (va - vb) * attSortDir;
+      return typeof va === 'string' ? va.localeCompare(vb, 'ko', { numeric: true }) * attSortDir : (va - vb) * attSortDir;
     });
 
     const countEl = document.getElementById('attCount');
@@ -1659,7 +1660,7 @@
       if (attData[s.id]?.[week]) byClass[c].done++;
     });
 
-    const names = Object.keys(byClass).sort((a, b) => a.localeCompare(b, 'ko'));
+    const names = Object.keys(byClass).sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
     if (!names.length) { el.innerHTML = ''; return; }
 
     const pendingNames = names.filter(n => byClass[n].done < byClass[n].total);
@@ -2025,7 +2026,7 @@
     if (!classes.length) { el.innerHTML = '<div style="color:var(--sub);font-size:13px">등록된 반이 없습니다.</div>'; return; }
     // 학년 → 반 이름 순으로 정렬 (학년 없는 반은 뒤로)
     const sorted = [...classes].sort((a, b) =>
-      (parseInt(a.grade) || 99) - (parseInt(b.grade) || 99) || a.name.localeCompare(b.name, 'ko'));
+      (parseInt(a.grade) || 99) - (parseInt(b.grade) || 99) || a.name.localeCompare(b.name, 'ko', { numeric: true }));
 
     const gradeOpts = g => ['', '1학년','2학년','3학년','4학년','5학년','6학년']
       .map(v => `<option value="${v}"${v === (g || '') ? ' selected' : ''}>${v || '학년 미지정'}</option>`).join('');

@@ -391,10 +391,11 @@
   const weekCheckDate = (sem, w) => fmtLongDate(weekCheckDateObj(sem, w));
 
   async function loadClasses() {
-    const { data } = await sb.from('joyland_classes').select('name').order('name');
+    const { data } = await sb.from('joyland_classes').select('name');
     const list = document.getElementById('ddList');
     list.innerHTML = '';
-    (data || []).forEach(c => {
+    // DB 정렬은 '10조'를 '1조'보다 앞에 두므로 숫자를 숫자로 보는 정렬로 맞춤
+    (data || []).sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true })).forEach(c => {
       const item = document.createElement('div');
       item.className = 'dd-item';
       item.dataset.value = c.name;
