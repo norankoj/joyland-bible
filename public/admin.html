@@ -741,7 +741,11 @@
               <div class="fld-row">
                 <div><div class="fl-lbl">시작 날짜</div><input class="fld" id="saStart" type="date" oninput="renderSaPreview()"/></div>
                 <div><div class="fl-lbl">하루 장수</div><input class="fld" id="saPerDay" type="number" min="1" oninput="renderSaPreview()"/></div>
-                <div><div class="fl-lbl">일요일 장수</div><input class="fld" id="saPerSun" type="number" min="1" oninput="renderSaPreview()"/></div>
+                <div><div class="fl-lbl">빨간날 장수</div><input class="fld" id="saPerSun" type="number" min="1" oninput="renderSaPreview()"/></div>
+              </div>
+              <div>
+                <div class="fl-lbl">이 달 공휴일 <span style="font-weight:400">일요일처럼 빨간날 장수로 채워요. 날짜를 쉼표로 고칠 수 있어요</span></div>
+                <input class="fld" id="saHoliday" placeholder="예: 3, 5, 9" oninput="renderSaPreview()"/>
               </div>
               <label style="font-size:13px;display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="saTue" checked onchange="renderSaPreview()"/> 화요일은 '화요모임'</label>
               <div id="saPreview" class="col-hint" style="margin:0"></div>
@@ -958,10 +962,11 @@
     if (error) { showToast('스케줄 불러오기 실패'); return; }
     document.getElementById('schedMonthLbl').textContent = `${y}년 ${m}월`;
     const now = new Date(), isThisMonth = now.getFullYear() === y && now.getMonth() + 1 === m;
+    const hol = holidaysOf(y, m);
     const body = document.getElementById('schedBody');
     body.innerHTML = Array.from({ length: last }, (_, i) => {
       const d = i + 1, dow = new Date(y, m - 1, d).getDay();
-      const cls = [dow === 0 && 'sun', dow === 6 && 'sat', dow === 2 && 'meet', isThisMonth && d === now.getDate() && 'today'].filter(Boolean).join(' ');
+      const cls = [(dow === 0 || hol.includes(d)) && 'sun', dow === 6 && 'sat', dow === 2 && 'meet', isThisMonth && d === now.getDate() && 'today'].filter(Boolean).join(' ');
       return `<tr class="${cls}"><td class="sc-date">${m}.${d}<em>${'일월화수목금토'[dow]}</em></td>
         <td><input data-d="${d}" data-g="low" aria-label="${m}월 ${d}일 저학년"/></td>
         <td><input data-d="${d}" data-g="high" aria-label="${m}월 ${d}일 고학년"/></td></tr>`;
@@ -1012,15 +1017,15 @@
   /**
    * 날짜별 본문 계산. 하루 분량이 책 끝을 넘으면 그 책에서 끊고 다음 날 새 책으로
    * (예: 출애굽기 40장 → 다음 날 민수기 1-3장). 요한계시록이 끝나면 빈칸.
-   * days: [{ d, dow }], start: { b: 책 index, c: 장 }
+   * days: [{ d, dow, red }] (red = 공휴일, 일요일은 자동), start: { b: 책 index, c: 장 }
    */
   function planReading(days, start, perDay, perSun, tueMeet) {
     let { b, c } = start;
-    return days.map(({ d, dow }) => {
+    return days.map(({ d, dow, red }) => {
       if (tueMeet && dow === 2) return { d, passage: '화요모임' };
       if (b >= BIBLE.length) return { d, passage: '' };
       const [name, max] = BIBLE[b];
-      const end = Math.min(c + (dow === 0 ? perSun : perDay) - 1, max);
+      const end = Math.min(c + (dow === 0 || red ? perSun : perDay) - 1, max);
       const passage = `${name} ${c === end ? c : c + '-' + end}장`;
       if (end >= max) { b++; c = 1; } else c = end + 1;
       return { d, passage };
@@ -1034,6 +1039,19 @@
     if (b < 0) return null;
     const last = +(m[3] || m[2]);
     return last >= BIBLE[b][1] ? { b: b + 1, c: 1 } : { b, c: last + 1 };
+  }
+
+  // 공휴일: 양력 고정 + 해마다 바뀌는 날(설·추석·부처님오신날·대체·선거일)
+  // ponytail: 음력·대체공휴일은 손으로 넣은 표. 2028년부터는 여기 추가 (없으면 모달에서 직접 입력)
+  const HOLIDAY_FIXED = ['01-01', '03-01', '05-05', '06-06', '08-15', '10-03', '10-09', '12-25'];
+  const HOLIDAY_YEAR = {
+    2026: ['02-16', '02-17', '02-18', '03-02', '05-24', '05-25', '06-03', '08-17', '09-24', '09-25', '09-26', '10-05'],
+    2027: ['02-06', '02-07', '02-08', '02-09', '05-13', '08-16', '09-14', '09-15', '09-16', '10-04', '10-11', '12-27'],
+  };
+  /** 그 달 공휴일 날짜(일) 목록 */
+  function holidaysOf(y, m) {
+    const mm = String(m).padStart(2, '0') + '-';
+    return [...HOLIDAY_FIXED, ...(HOLIDAY_YEAR[y] || [])].filter(s => s.startsWith(mm)).map(s => +s.slice(3)).sort((a, b) => a - b);
   }
 
   const SA_DEFAULT = { low: { perDay: 1, perSun: 1 }, high: { perDay: 3, perSun: 1 } };
@@ -1059,6 +1077,7 @@
     st.value = `${ym}-${String(startD).padStart(2,'0')}`;
     document.getElementById('saPerDay').value = SA_DEFAULT[g].perDay;
     document.getElementById('saPerSun').value = SA_DEFAULT[g].perSun;
+    document.getElementById('saHoliday').value = holidaysOf(...ym.split('-').map(Number)).join(', ');
     renderSaBooks(); renderSaChapters();
     document.getElementById('schedAutoPanel').classList.add('show');
   }
@@ -1091,7 +1110,8 @@
     const [y, m, d0] = document.getElementById('saStart').value.split('-').map(Number);
     if (!d0) return [];
     const last = new Date(y, m, 0).getDate();
-    const days = Array.from({ length: last - d0 + 1 }, (_, k) => ({ d: d0 + k, dow: new Date(y, m - 1, d0 + k).getDay() }));
+    const hol = new Set(document.getElementById('saHoliday').value.split(/[,\s]+/).map(Number).filter(Boolean));
+    const days = Array.from({ length: last - d0 + 1 }, (_, k) => ({ d: d0 + k, dow: new Date(y, m - 1, d0 + k).getDay(), red: hol.has(d0 + k) }));
     const n = id => Math.max(1, +document.getElementById(id).value || 1);
     return planReading(days, sa, n('saPerDay'), n('saPerSun'), document.getElementById('saTue').checked);
   }
