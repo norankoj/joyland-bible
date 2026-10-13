@@ -14,42 +14,43 @@
   <link rel="apple-touch-icon" href="/icons/icon-admin-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-admin-192.png">
   <script>window.JOYLAND_APP='admin';</script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root { --p:#7B4FE8; --pl:#F2EEFF; --pd:#5B2ED6; --gold:#FFB800; --amber:#FF8C42; --green:#2DC38C; --text:#1A1140; --sub:#6B6785; --bdr:#EDECF5; --bg:#FFFFFF; --surface:#FAFAFA; --shadow:0 2px 18px rgba(100,80,180,0.09); }
-    body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background: var(--bg); color: var(--text); }
+    body { font-family: 'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background: var(--bg); color: var(--text); }
 
     /* 로그인 */
     .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#120B38 0%,#3B1D8A 60%,#7B4FE8 100%); padding:24px; }
     .login-card { background:white; border-radius:28px; padding:36px 28px; width:100%; max-width:340px; box-shadow:0 24px 64px rgba(0,0,0,0.35); }
     .login-card .em { font-size:48px; text-align:center; margin-bottom:12px; }
     .login-card .ti { font-size:20px; font-weight:900; text-align:center; margin-bottom:4px; }
-    .login-card .su { font-size:12px; color:var(--sub); text-align:center; margin-bottom:28px; }
+    .login-card .su { font-size:14px; color:var(--sub); text-align:center; margin-bottom:28px; }
 
     /* 레이아웃 */
     .admin-wrap { display:flex; min-height:100vh; }
     .sidebar { width:200px; background:#1A1140; display:flex; flex-direction:column; flex-shrink:0; }
     .sb-logo { padding:22px 20px 18px; border-bottom:1px solid rgba(255,255,255,0.07); }
-    .sb-logo .t1 { font-size:15px; font-weight:900; color:white; }
-    .sb-logo .t2 { font-size:11px; color:rgba(255,255,255,0.3); margin-top:3px; }
-    .sb-i { display:flex; align-items:center; gap:10px; padding:12px 20px; color:rgba(255,255,255,0.42); font-size:13px; cursor:pointer; border-left:3px solid transparent; transition:all 0.15s; user-select:none; }
+    .sb-logo .t1 { font-size:17px; font-weight:900; color:white; }
+    .sb-logo .t2 { font-size:13px; color:rgba(255,255,255,0.3); margin-top:3px; }
+    .sb-i { display:flex; align-items:center; gap:10px; padding:12px 20px; color:rgba(255,255,255,0.42); font-size:15px; cursor:pointer; border-left:3px solid transparent; transition:all 0.15s; user-select:none; }
     .sb-i:hover { color:rgba(255,255,255,0.72); background:rgba(255,255,255,0.04); }
     .sb-i.on { color:white; background:rgba(123,79,232,0.18); border-left-color:#9F75FF; font-weight:700; }
-    .sb-i .ic { font-size:16px; }
+    .sb-i .ic { font-size:18px; }
     .sb-bottom { margin-top:auto; border-top:1px solid rgba(255,255,255,0.07); padding:6px 0; }
     .main { flex:1; padding:28px; overflow-y:auto; background:var(--bg); }
     .pg-t { font-size:20px; font-weight:900; margin-bottom:3px; }
-    .pg-s { font-size:13px; color:var(--sub); margin-bottom:22px; }
+    .pg-s { font-size:15px; color:var(--sub); margin-bottom:22px; }
 
     /* 통계 */
     .stat-row { display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
     .stat-card { flex:1; min-width:90px; background:var(--bg); border-radius:8px; padding:18px 16px; box-shadow:var(--shadow); border:1px solid var(--bdr); }
     .st-n { font-size:28px; font-weight:900; line-height:1; }
-    .st-l { font-size:12px; color:var(--sub); margin-top:6px; }
-    .st-u { font-size:14px; font-weight:700; margin-left:2px; }
+    .st-l { font-size:14px; color:var(--sub); margin-top:6px; }
+    .st-u { font-size:16px; font-weight:700; margin-left:2px; }
 
     /* 학생 그리드 */
-    .legend { font-size:12px; color:var(--sub); background:var(--bg); border-radius:8px; padding:10px 14px; margin-bottom:10px; display:flex; gap:14px; flex-wrap:wrap; border:1px solid var(--bdr); }
+    .legend { font-size:14px; color:var(--sub); background:var(--bg); border-radius:8px; padding:10px 14px; margin-bottom:10px; display:flex; gap:14px; flex-wrap:wrap; border:1px solid var(--bdr); }
     .s-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(115px,1fr)); gap:10px; margin-bottom:20px; }
     .s-card { background:var(--bg); border-radius:14px; padding:14px 10px; box-shadow:var(--shadow); border:1px solid var(--bdr); text-align:center; transition:transform 0.15s; }
     .s-card:hover { transform:translateY(-2px); }
@@ -62,8 +63,8 @@
 
     /* 테이블 */
     .tbl-wrap { overflow-x:auto; border-radius:8px; box-shadow:var(--shadow); border:1px solid var(--bdr); }
-    .tbl { width:100%; border-collapse:separate; border-spacing:0; background:var(--bg); font-size:13px; white-space:nowrap; }
-    .tbl th { background:var(--pl); padding:12px 14px; font-size:12px; color:var(--sub); border-bottom:1px solid var(--bdr); text-align:center; font-weight:700; }
+    .tbl { width:100%; border-collapse:separate; border-spacing:0; background:var(--bg); font-size:15px; white-space:nowrap; }
+    .tbl th { background:var(--pl); padding:12px 14px; font-size:14px; color:var(--sub); border-bottom:1px solid var(--bdr); text-align:center; font-weight:700; }
     .tbl th:first-child { text-align:left; padding-left:16px; border-right:1px solid var(--bdr); }
     .tbl th:nth-child(2) { text-align:left; }
     .tbl td { padding:12px 14px; border-bottom:1px solid var(--bdr); text-align:center; }
@@ -79,26 +80,26 @@
     /* 등록 */
     .two-col { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
     .reg-box { flex:1; min-width:260px; background:var(--bg); border-radius:16px; padding:22px; box-shadow:var(--shadow); border:1px solid var(--bdr); }
-    .rb-t { font-size:14px; font-weight:800; margin-bottom:16px; }
+    .rb-t { font-size:16px; font-weight:800; margin-bottom:16px; }
     .up-zone { border:2.5px dashed #C5BEE0; border-radius:18px; padding:32px; text-align:center; background:#F8F6FF; margin-bottom:16px; cursor:pointer; transition:all 0.2s; }
     .up-zone:hover { border-color:var(--p); background:var(--pl); }
     .up-zone .ue { font-size:40px; margin-bottom:8px; }
-    .up-zone .ut { font-size:14px; font-weight:700; color:var(--p); }
-    .up-zone .us { font-size:11px; color:var(--sub); margin-top:4px; }
-    .col-hint { background:var(--pl); border-radius:12px; padding:12px 14px; font-size:12px; color:var(--pd); line-height:1.9; margin-bottom:16px; }
+    .up-zone .ut { font-size:16px; font-weight:700; color:var(--p); }
+    .up-zone .us { font-size:13px; color:var(--sub); margin-top:4px; }
+    .col-hint { background:var(--pl); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--pd); line-height:1.9; margin-bottom:16px; }
     .fl { display:flex; flex-direction:column; gap:12px; }
     .fg { }
-    .fl-lbl { font-size:12px; font-weight:700; color:var(--sub); margin-bottom:6px; }
-    .fld { width:100%; padding:12px 14px; border:1px solid var(--bdr); border-radius:6px; font-size:14px; outline:none; background:white; font-family:inherit; }
+    .fl-lbl { font-size:14px; font-weight:700; color:var(--sub); margin-bottom:6px; }
+    .fld { width:100%; padding:12px 14px; border:1px solid var(--bdr); border-radius:6px; font-size:16px; outline:none; background:white; font-family:inherit; }
     .fld:focus { border-color:var(--p); background:var(--pl); }
     .fld-row { display:flex; gap:10px; }
     .fld-row > div { flex:1; }
-    .pin-pre { background:var(--pl); border-radius:12px; padding:10px 14px; font-size:12px; color:var(--pd); }
+    .pin-pre { background:var(--pl); border-radius:12px; padding:10px 14px; font-size:14px; color:var(--pd); }
 
     /* 시상 */
-    .aw-info { background:linear-gradient(135deg,#FFF8E1,#FFF0C2); border-radius:14px; padding:14px 18px; margin:12px 0 4px; font-size:12.5px; color:#92400E; line-height:1.8; }
+    .aw-info { background:linear-gradient(135deg,#FFF8E1,#FFF0C2); border-radius:14px; padding:14px 18px; margin:12px 0 4px; font-size:14.5px; color:#92400E; line-height:1.8; }
     .aw-help-btn { flex-shrink:0; border:1.5px solid var(--bdr); background:var(--bg); border-radius:99px;
-      padding:7px 14px; font-family:inherit; font-size:12px; font-weight:700; color:var(--sub); cursor:pointer; }
+      padding:7px 14px; font-family:inherit; font-size:14px; font-weight:700; color:var(--sub); cursor:pointer; }
     .aw-help-btn:hover { background:var(--surface); }
 
     .aw-boxes { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
@@ -109,44 +110,44 @@
     .aw-box-hd:hover { background:var(--surface); }
     .aw-box-em { font-size:24px; flex-shrink:0; }
     .aw-box-tx { flex:1; min-width:0; }
-    .aw-box-l { display:block; font-size:14px; font-weight:800; color:var(--text); }
-    .aw-box-s { display:block; font-size:11.5px; color:var(--sub); margin-top:2px; }
+    .aw-box-l { display:block; font-size:16px; font-weight:800; color:var(--text); }
+    .aw-box-s { display:block; font-size:13.5px; color:var(--sub); margin-top:2px; }
     .aw-box-n { font-size:22px; font-weight:900; white-space:nowrap; }
-    .aw-box-u { font-size:12px; font-weight:700; margin-left:1px; }
+    .aw-box-u { font-size:14px; font-weight:700; margin-left:1px; }
     .aw-box-ar { color:var(--sub); flex-shrink:0; transition:transform .2s; }
     .aw-box.open .aw-box-ar { transform:rotate(180deg); }
     .aw-names { padding:13px 16px 15px; border-top:1px solid var(--bdr); }
     .aw-grp { display:flex; gap:10px; padding:7px 0; border-bottom:1px dashed var(--bdr); }
     .aw-grp:last-child { border-bottom:none; }
-    .aw-grp-l { flex-shrink:0; width:54px; font-size:11.5px; font-weight:800; color:var(--sub); padding-top:5px; }
-    .aw-grp-l span { display:block; font-weight:600; opacity:.75; font-size:10.5px; margin-top:1px; }
+    .aw-grp-l { flex-shrink:0; width:54px; font-size:13.5px; font-weight:800; color:var(--sub); padding-top:5px; }
+    .aw-grp-l span { display:block; font-weight:600; opacity:.75; font-size:12.5px; margin-top:1px; }
     .aw-grp-c { flex:1; display:flex; flex-wrap:wrap; gap:5px; }
-    .aw-chip { font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:99px; white-space:nowrap; }
-    .aw-none { font-size:12.5px; color:var(--sub); padding:2px; }
-    .aw-state { margin-top:14px; font-size:12.5px; color:var(--sub); line-height:1.6;
+    .aw-chip { font-size:14.5px; font-weight:700; padding:5px 10px; border-radius:99px; white-space:nowrap; }
+    .aw-none { font-size:14.5px; color:var(--sub); padding:2px; }
+    .aw-state { margin-top:14px; font-size:14.5px; color:var(--sub); line-height:1.6;
       background:var(--surface); border-radius:12px; padding:12px 14px; }
     .aw-state.ok { color:#12A06B; background:#F3FCF8; font-weight:700; }
-    .aw-sec { font-size:14px; font-weight:800; margin-bottom:12px; }
+    .aw-sec { font-size:16px; font-weight:800; margin-bottom:12px; }
     .aw-card { background:white; border-radius:18px; padding:18px 20px; margin-bottom:12px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 14px rgba(0,0,0,0.06); }
     .aw-em { font-size:42px; }
     .aw-inf { flex:1; }
-    .aw-nm { font-size:15px; font-weight:800; }
-    .aw-dt { font-size:12px; color:var(--sub); margin-top:3px; }
-    .aw-bd { padding:6px 14px; border-radius:99px; font-size:12px; font-weight:800; }
+    .aw-nm { font-size:17px; font-weight:800; }
+    .aw-dt { font-size:14px; color:var(--sub); margin-top:3px; }
+    .aw-bd { padding:6px 14px; border-radius:99px; font-size:14px; font-weight:800; }
     .bd-g { background:#FFF3CC; color:#A07000; }
     .bd-gr { background:#E6FBF3; color:#087C4A; }
 
     /* 학기 설정 */
     .set-box { background:var(--bg); border-radius:16px; padding:22px; box-shadow:var(--shadow); border:1px solid var(--bdr); margin-bottom:16px; }
-    .sb-t { font-size:14px; font-weight:800; margin-bottom:16px; }
+    .sb-t { font-size:16px; font-weight:800; margin-bottom:16px; }
 
     /* 버튼 */
-    .btn { padding:13px 20px; border-radius:14px; border:none; font-size:14px; font-weight:700; cursor:pointer; transition:transform 0.1s; font-family:inherit; }
+    .btn { padding:13px 20px; border-radius:14px; border:none; font-size:16px; font-weight:700; cursor:pointer; transition:transform 0.1s; font-family:inherit; }
     .btn:active { transform:scale(0.97); }
     .btn-p { background:linear-gradient(135deg,var(--p),#9F75FF); color:white; }
     .btn-g { background:linear-gradient(135deg,#2DC38C,#34D399); color:white; }
     .btn-full { width:100%; padding:14px; }
-    .btn-sm { padding:9px 16px; font-size:13px; border-radius:10px; }
+    .btn-sm { padding:9px 16px; font-size:15px; border-radius:10px; }
     .btn-danger { background:#FEE2E2; color:#991B1B; border:none; }
 
     /* ── 커스텀 드롭다운 ──
@@ -158,14 +159,14 @@
       width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
       border:1.5px solid var(--bdr); border-radius:8px; background:var(--bg);
       font-family:inherit; color:var(--text); text-align:left; cursor:pointer;
-      padding:9px 11px; font-size:13px;
+      padding:9px 11px; font-size:15px;
     }
     .cs-t:hover { border-color:#D9CCFF; }
     .cs-t.open { border-color:var(--p); background:var(--pl); }
     .cs-t svg { flex-shrink:0; color:var(--sub); transition:transform .2s; }
     .cs-t.open svg { transform:rotate(180deg); }
     /* 폼 안(.fld)에서는 입력칸과 같은 크기로 */
-    .cs.fld-size .cs-t { padding:12px 14px; font-size:14px; border-radius:10px; background:var(--surface); }
+    .cs.fld-size .cs-t { padding:12px 14px; font-size:16px; border-radius:10px; background:var(--surface); }
     /* 모달·표의 overflow 에 잘리지 않도록 fixed 로 띄웁니다 (위치는 JS 가 지정) */
     .cs-l {
       position:fixed; z-index:400;
@@ -175,7 +176,7 @@
     }
     .cs-l.open { display:block; }
     .cs-i {
-      padding:9px 11px; border-radius:6px; font-size:13px; color:var(--text);
+      padding:9px 11px; border-radius:6px; font-size:15px; color:var(--text);
       cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .cs-i:hover { background:var(--surface); }
@@ -185,11 +186,64 @@
     .md-ov { position:fixed; inset:0; background:rgba(20,12,50,.42); z-index:200;
       display:none; align-items:center; justify-content:center; padding:20px; }
     .md-ov.show { display:flex; }
+    /* 통독 스케줄 자동 채우기 */
+    .sc-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .sc-month { display:flex; align-items:center; height:40px; border:1px solid var(--bdr); border-radius:10px; background:var(--bg); }
+    .sc-month button { width:40px; height:100%; border:none; background:none; font-size:20px; line-height:1; color:var(--pd); cursor:pointer; border-radius:10px; font-family:inherit; }
+    .sc-month button:hover { background:var(--pl); }
+    .sc-month span { min-width:120px; text-align:center; font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .sc-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
+    .sc-btn { height:40px; padding:0 16px; border:1px solid var(--bdr); border-radius:10px; background:var(--bg); color:var(--text); font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; transition:transform .1s, background .15s; }
+    .sc-btn:hover { background:var(--pl); border-color:var(--pl); color:var(--pd); }
+    .sc-btn:active { transform:scale(0.97); }
+    .sc-btn-p { background:var(--p); border-color:var(--p); color:white; padding:0 20px; }
+    .sc-btn-p:hover { background:var(--pd); border-color:var(--pd); color:white; }
+    .sc-dirty { display:none; font-size:13px; font-weight:700; color:var(--amber); }
+    .sc-dirty.on { display:inline; }
+    .sc-wrap { overflow-x:auto; border:1px solid var(--bdr); border-radius:10px; }
+    .sc-tbl { width:100%; min-width:520px; border-collapse:collapse; table-layout:fixed; font-size:15px; }
+    .sc-tbl th { position:sticky; top:0; background:var(--surface); padding:12px 14px; border-bottom:1px solid var(--bdr); text-align:left; font-size:14px; font-weight:800; color:var(--text); }
+    .sc-th { display:flex; align-items:center; gap:6px; }
+    .sc-th span { font-weight:600; color:var(--sub); }
+    .sc-auto { margin-left:auto; height:30px; padding:0 12px; border:1px solid var(--p); background:var(--bg); color:var(--p); font-size:13px; font-weight:700; border-radius:8px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .sc-auto:hover { background:var(--p); color:white; }
+    .sc-tbl td { padding:0; border-bottom:1px solid var(--bdr); height:46px; }
+    .sc-tbl tr:last-child td { border-bottom:none; }
+    .sc-tbl td + td { border-left:1px solid var(--bdr); }
+    .sc-date { padding:0 14px !important; white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:700; }
+    .sc-date em { font-style:normal; font-weight:600; color:var(--sub); margin-left:6px; }
+    .sc-tbl tr.sun .sc-date em { color:#E5484D; }
+    .sc-tbl tr.sat .sc-date em { color:#3B82F6; }
+    .sc-tbl tr.today .sc-date { color:var(--p); box-shadow:inset 3px 0 0 var(--p); }
+    .sc-tbl tr.meet td { background:var(--surface); }
+    .sc-tbl input { width:100%; height:46px; padding:0 14px; border:none; background:transparent; font-size:15px; font-family:inherit; color:var(--text); outline:none; }
+    .sc-tbl input:focus { background:var(--pl); box-shadow:inset 0 0 0 2px var(--p); }
+    .sc-help { font-size:13px; color:var(--sub); margin-top:10px; line-height:1.7; }
+    @media (max-width:640px) {
+      .sc-actions { margin-left:0; width:100%; } .sc-actions .sc-btn-p { margin-left:auto; }
+      .sc-tbl { min-width:0; } .sc-tbl col:first-child { width:74px !important; } .sc-date em { margin-left:3px; }
+      .sc-tbl { font-size:14px; } .sc-tbl th { padding:8px; font-size:13px; } .sc-date { padding:0 8px !important; } .sc-tbl input { padding:0 8px; font-size:14px; }
+      .sc-th span { display:none; } .sc-auto { padding:0 7px; font-size:11px; }
+    }
+    .sa-sec { font-size:13px; font-weight:800; color:var(--sub); margin:4px 0 6px; }
+    .sa-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(52px,1fr)); gap:6px; max-height:220px; overflow-y:auto; }
+    .sa-books { grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); max-height:none; }
+    #saBooks { max-height:260px; overflow-y:auto; }
+    .sa-grid button { border:1px solid var(--bdr); background:var(--bg); border-radius:8px; padding:10px 2px; font-size:14px; cursor:pointer; font-family:inherit; color:var(--text); }
+    .sa-grid button:hover { border-color:var(--p); }
+    /* 자동 채우기 모달은 글씨 크게 (공용 .fl-lbl/.md-t 는 그대로) */
+    #schedAutoPanel .md-t { font-size:18px; }
+    #schedAutoPanel .md-t span { font-size:14px !important; }
+    #schedAutoPanel .fl-lbl { font-size:14px; }
+    #schedAutoPanel .fld { font-size:16px; }
+    #schedAutoPanel label { font-size:15px !important; }
+    #saPreview { font-size:15px; line-height:1.7; }
+    .sa-grid button.on { background:var(--p); border-color:var(--p); color:white; font-weight:800; }
     .md { background:var(--bg); border-radius:12px; width:100%; max-width:520px;
       max-height:88vh; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(20,12,50,.3); }
     .md-hd { display:flex; align-items:center; justify-content:space-between; gap:12px;
       padding:16px 20px; border-bottom:1px solid var(--bdr); }
-    .md-t { font-size:15px; font-weight:800; color:var(--text); }
+    .md-t { font-size:17px; font-weight:800; color:var(--text); }
     .md-x { border:none; background:none; font-size:22px; line-height:1; color:var(--sub);
       cursor:pointer; padding:0 4px; }
     .md-x:hover { color:var(--text); }
@@ -198,11 +252,11 @@
       padding:14px 20px; border-top:1px solid var(--bdr); background:var(--surface); border-radius:0 0 12px 12px; }
 
     /* 메시지 */
-    .msg { border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:14px; display:none; }
+    .msg { border-radius:12px; padding:10px 14px; font-size:15px; margin-bottom:14px; display:none; }
     .msg.err { background:#FEE2E2; color:#991B1B; }
     .msg.ok { background:#D1FAE5; color:#065F46; }
 
-    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1E1248; color:white; padding:12px 24px; border-radius:99px; font-size:14px; font-weight:700; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; z-index:999; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1E1248; color:white; padding:12px 24px; border-radius:99px; font-size:16px; font-weight:700; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; z-index:999; }
     .toast.show { opacity:1; }
     .ld-ov { position:fixed; inset:0; background:rgba(248,246,255,0.85); display:none; align-items:center; justify-content:center; z-index:9999; }
     .ld-ov.show { display:flex; }
@@ -216,7 +270,7 @@
     input[type="date"].fld::-webkit-calendar-picker-indicator { filter:invert(30%) sepia(80%) saturate(500%) hue-rotate(235deg) brightness(0.9); cursor:pointer; }
     /* 모바일 하단 탭 */
     .mob-nav { position:fixed; bottom:0; left:0; right:0; background:#1A1140; border-top:1px solid rgba(255,255,255,0.07); padding:6px 0 calc(6px + env(safe-area-inset-bottom)); z-index:100; }
-    .mob-ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px; color:rgba(255,255,255,0.4); font-size:10px; cursor:pointer; transition:color 0.15s; }
+    .mob-ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px; color:rgba(255,255,255,0.4); font-size:12px; cursor:pointer; transition:color 0.15s; }
     .mob-ni .mi { display:flex; align-items:center; justify-content:center; height:22px; }
     .mob-ni.on { color:#B088FF; }
     .mob-ni.on svg { stroke:#B088FF; }
@@ -225,11 +279,11 @@
 
     /* 서브탭 */
     .sub-tabs { display:flex; gap:6px; margin-bottom:18px; background:var(--surface); border-radius:12px; padding:4px; }
-    .sub-tab { flex:1; padding:9px 14px; border-radius:9px; border:none; background:none; color:var(--sub); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+    .sub-tab { flex:1; padding:9px 14px; border-radius:9px; border:none; background:none; color:var(--sub); font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
     .sub-tab.active { background:var(--bg); color:var(--text); box-shadow:0 1px 6px rgba(0,0,0,.09); }
 
     /* 뱃지 */
-    .bdg { display:inline-block; padding:4px 11px; border-radius:99px; font-size:12px; font-weight:700; }
+    .bdg { display:inline-block; padding:4px 11px; border-radius:99px; font-size:14px; font-weight:700; }
     .bdg.done    { background:#E9FAF4; color:var(--green); }
     .bdg.partial { background:#FFF2E8; color:var(--amber); }
     .bdg.missed  { background:var(--bdr); color:var(--sub); }
@@ -251,15 +305,15 @@
     .wk-chip.closing-on .wk-num { color:#F43F5E; }
     .wk-chip.closing-on .wk-date { color:#F43F5E; }
     .wk-chip.closing-on .wk-tag { color:#F43F5E; }
-    .wk-chip .wk-num { font-size:13px; font-weight:800; color:var(--text); }
-    .wk-chip .wk-date { font-size:10px; color:var(--sub); margin-top:2px; }
+    .wk-chip .wk-num { font-size:15px; font-weight:800; color:var(--text); }
+    .wk-chip .wk-date { font-size:12px; color:var(--sub); margin-top:2px; }
     .wk-chip.break-on .wk-num { color:var(--amber); }
     .wk-chip.break-on .wk-date { color:var(--amber); }
-    .wk-chip .wk-tag { font-size:9px; font-weight:700; color:var(--amber); margin-top:3px; }
+    .wk-chip .wk-tag { font-size:11px; font-weight:700; color:var(--amber); margin-top:3px; }
 
     /* 반별 현황 */
-    .cls-tbl { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
-    .cls-tbl th { background:var(--pl); padding:11px 14px; font-size:12px; color:var(--sub); font-weight:700; border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:3; }
+    .cls-tbl { width:100%; border-collapse:separate; border-spacing:0; font-size:15px; }
+    .cls-tbl th { background:var(--pl); padding:11px 14px; font-size:14px; color:var(--sub); font-weight:700; border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:3; }
     .cls-tbl th:first-child { text-align:left; padding-left:16px; border-radius:8px 0 0 0; }
     .cls-tbl th:last-child  { border-radius:0 8px 0 0; }
     .cls-tbl td { padding:13px 14px; border-bottom:1px solid var(--bdr); text-align:center; vertical-align:middle; }
@@ -274,8 +328,8 @@
     .cls-mini-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; }
     .cls-mini-card { background:var(--bg); border-radius:10px; padding:10px 8px; border:1px solid var(--bdr); text-align:center; }
     .cls-mini-em { font-size:22px; margin-bottom:3px; }
-    .cls-mini-nm { font-size:12px; font-weight:800; }
-    .cls-mini-pc { font-size:11px; color:var(--p); font-weight:700; margin-top:2px; }
+    .cls-mini-nm { font-size:14px; font-weight:800; }
+    .cls-mini-pc { font-size:13px; color:var(--p); font-weight:700; margin-top:2px; }
 
     /* 테이블 현재 주차 강조 */
     .tbl th.cur-week { background:#E4DAFF; color:var(--p); font-weight:800; }
@@ -311,21 +365,21 @@
     .ac-card.part  { border-color:#FFD9A8; background:#FFFBF3; }
     .ac-card.none  { border-color:#FBC7C7; background:#FFF5F5; }
     .ac-top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:8px; }
-    .ac-nm { font-size:13px; font-weight:800; }
-    .ac-cnt { font-size:12px; font-weight:800; white-space:nowrap; }
+    .ac-nm { font-size:15px; font-weight:800; }
+    .ac-cnt { font-size:14px; font-weight:800; white-space:nowrap; }
     .ac-card.done .ac-cnt { color:#129A6B; }
     .ac-card.part .ac-cnt { color:#D08C1E; }
     .ac-card.none .ac-cnt { color:#E15252; }
     .ac-bar { background:var(--bdr); border-radius:99px; height:6px; overflow:hidden; }
     .ac-fill { height:100%; border-radius:99px; transition:width .4s; }
-    .ac-tc { font-size:11px; color:var(--sub); margin-top:6px; }
-    .ac-sum { font-size:13px; font-weight:800; margin-bottom:10px; }
+    .ac-tc { font-size:13px; color:var(--sub); margin-top:6px; }
+    .ac-sum { font-size:15px; font-weight:800; margin-bottom:10px; }
     .ac-sum.pend { color:#E15252; }
     .ac-sum.ok   { color:#129A6B; }
     .sched-more {
       display:flex; align-items:center; justify-content:center; gap:4px;
       width:100%; padding:9px; border:1.5px solid var(--bdr); border-radius:12px;
-      background:none; font-family:inherit; font-size:12px; font-weight:700;
+      background:none; font-family:inherit; font-size:14px; font-weight:700;
       color:var(--sub); cursor:pointer;
     }
     .sched-more:hover { background:var(--surface); }
@@ -333,7 +387,7 @@
     .ac-empty {
       background:var(--surface); border:1.5px solid var(--bdr); border-radius:13px;
       padding:18px 16px; text-align:center;
-      font-size:13px; font-weight:600; color:var(--sub);
+      font-size:15px; font-weight:600; color:var(--sub);
     }
 
     /* ── 출석 셀 인라인 편집 ── */
@@ -344,9 +398,9 @@
       border:1px solid var(--bdr); border-radius:12px; padding:6px;
       box-shadow:0 10px 32px rgba(0,0,0,.18); display:flex; flex-direction:column; gap:3px; min-width:118px;
     }
-    .att-pop-t { font-size:11px; color:var(--sub); font-weight:700; padding:4px 8px 6px; border-bottom:1px solid var(--bdr); margin-bottom:3px; }
+    .att-pop-t { font-size:13px; color:var(--sub); font-weight:700; padding:4px 8px 6px; border-bottom:1px solid var(--bdr); margin-bottom:3px; }
     .att-pop button {
-      border:none; background:none; font-family:inherit; font-size:13px; font-weight:700;
+      border:none; background:none; font-family:inherit; font-size:15px; font-weight:700;
       padding:8px 10px; border-radius:8px; cursor:pointer; text-align:left; color:var(--text);
     }
     .att-pop button:hover { background:var(--surface); }
@@ -364,7 +418,7 @@
       .cls-tbl tr.cls-row:hover { background:var(--bg); }
       .cls-tbl td { display:block; border-bottom:none; padding:0; text-align:left; }
       .cls-tbl td.c-name {
-        flex:0 0 100%; font-size:15px; font-weight:800; padding-bottom:10px;
+        flex:0 0 100%; font-size:17px; font-weight:800; padding-bottom:10px;
         border-bottom:1px solid var(--bdr);
       }
       /* 학생수/완료/부분/미체크 → 4칸 가로 배열 */
@@ -379,7 +433,7 @@
       .cls-tbl td[data-lbl$="완료율"] { flex:0 0 100%; }
       .cls-tbl td[data-lbl]::before {
         content:attr(data-lbl); display:block;
-        font-size:10px; font-weight:700; color:var(--sub); margin-bottom:4px;
+        font-size:12px; font-weight:700; color:var(--sub); margin-bottom:4px;
       }
       .cls-tbl tr.cls-detail { margin-bottom:10px; }
       .cls-tbl tr.cls-detail td { background:var(--surface); border-radius:12px; }
@@ -419,9 +473,10 @@
     <div class="sb-i"     id="mn-att"      onclick="showTab('att')">     <span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="7" r="3"/><path d="M2 18c0-3.3 2.7-5 8-5s8 1.7 8 5"/><polyline points="12,4 14,6 18,2"/></svg></span> 출석 현황</div>
     <div class="sb-i"     id="mn-students" onclick="showTab('students')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="7" r="4"/><path d="M2 19c0-4 3.6-7 8-7s8 3 8 7"/></svg></span> 학생 관리</div>
     <div class="sb-i"     id="mn-award"    onclick="showTab('award')">   <span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="10,2 12.5,7.5 18.5,8.2 14,12.5 15.5,18.5 10,15.5 4.5,18.5 6,12.5 1.5,8.2 7.5,7.5"/></svg></span> 시상 계산</div>
+    <div class="sb-i"     id="mn-sched"    onclick="showTab('sched')">   <span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5c-2-1.5-5-2-8-1.5v12c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-12c-3-.5-6 0-8 1.5z"/><line x1="10" y1="5" x2="10" y2="17"/></svg></span> 통독 스케줄</div>
     <div class="sb-i"     id="mn-settings" onclick="showTab('settings')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="16" height="15" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="5"/><line x1="14" y1="2" x2="14" y2="5"/></svg></span> 학기 설정</div>
     <div class="sb-bottom">
-      <div style="font-size:10px;font-weight:700;color:var(--sub);padding:0 14px 6px;letter-spacing:.04em">바로가기</div>
+      <div style="font-size:12px;font-weight:700;color:var(--sub);padding:0 14px 6px;letter-spacing:.04em">바로가기</div>
       <div class="sb-i" onclick="window.open('/teacher','_blank')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h6a2 2 0 0 1 2 2V17a1.6 1.6 0 0 0-1.4-1H3z"/><path d="M17 4.5h-6a2 2 0 0 0-2 2V17a1.6 1.6 0 0 1 1.4-1H17z"/></svg></span> 선생님 출석 체크</div>
       <div class="sb-i" onclick="window.open('/','_blank')"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10L10 3l7 7"/><rect x="5" y="10" width="10" height="8" rx="1"/></svg></span> 조이랜드 통독</div>
       <div class="sb-i" onclick="doLogout()"><span class="ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 17H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4"/><polyline points="13 14 18 10 13 6"/><line x1="18" y1="10" x2="7" y2="10"/></svg></span> 로그아웃</div>
@@ -439,7 +494,7 @@
           <button class="sub-tab active" id="dv-class"  onclick="switchDashView('class')">반별 현황</button>
           <button class="sub-tab"        id="dv-person" onclick="switchDashView('person')">개인 보기</button>
         </div>
-        <div id="dashViewSub" style="font-size:12px;color:var(--sub)"></div>
+        <div id="dashViewSub" style="font-size:14px;color:var(--sub)"></div>
       </div>
       <!-- 반별 현황 -->
       <div id="dash-class-view">
@@ -456,7 +511,7 @@
     <div id="tab-check" style="display:none">
       <div class="pg-t">주차별 체크 현황</div>
       <div class="pg-s" id="checkSub"></div>
-      <div style="font-size:12px;color:var(--sub);margin:-4px 0 12px">✏️ 표의 칸을 클릭하면 완료·부분완료를 바로 수정할 수 있습니다. (학부모님 오입력 보정용)</div>
+      <div style="font-size:14px;color:var(--sub);margin:-4px 0 12px">✏️ 표의 칸을 클릭하면 완료·부분완료를 바로 수정할 수 있습니다. (학부모님 오입력 보정용)</div>
       <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
         <div class="sub-tabs" style="margin-bottom:0;flex:none">
           <button class="sub-tab active" id="stab-cur" onclick="switchCheckTab('cur')">이번 학기</button>
@@ -464,12 +519,12 @@
         </div>
         <div style="position:relative;flex:1;min-width:160px">
           <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
-          <input id="checkSearch" type="text" placeholder="이름 검색…" oninput="renderCheckTable()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
+          <input id="checkSearch" type="text" placeholder="이름 검색…" oninput="renderCheckTable()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:15px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
         </div>
         <select id="checkClassFilter" onchange="renderCheckTable()" class="sel" style="flex:0 0 168px">
           <option value="">전체 반</option>
         </select>
-        <div id="checkCount" style="font-size:12px;color:var(--sub);white-space:nowrap"></div>
+        <div id="checkCount" style="font-size:14px;color:var(--sub);white-space:nowrap"></div>
       </div>
       <div class="tbl-scroll-wrap">
         <div class="tbl-scroll">
@@ -482,20 +537,20 @@
     <div id="tab-att" style="display:none">
       <div class="pg-t">출석 현황</div>
       <div class="pg-s" id="attSub"></div>
-      <div style="font-size:15px;font-weight:800;margin-bottom:10px" id="attWeekStatTitle">이번 주 출석 인원</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:10px" id="attWeekStatTitle">이번 주 출석 인원</div>
       <div class="stat-row" id="attWeekStatRow"></div>
 
       <!-- 이번 주 반별 체크 진행 상황 -->
-      <div style="font-size:15px;font-weight:800;margin-bottom:4px" id="attWeekTitle">이번 주 반별 체크 상황</div>
-      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">아직 출석을 넣지 않은 반이 빨갛게 표시됩니다.</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:4px" id="attWeekTitle">이번 주 반별 체크 상황</div>
+      <div style="font-size:14px;color:var(--sub);margin-bottom:10px">아직 출석을 넣지 않은 반이 빨갛게 표시됩니다.</div>
       <div id="attClassGrid" style="margin-bottom:22px"></div>
 
-      <div style="font-size:15px;font-weight:800;margin-bottom:4px">주차별 출석 현황</div>
-      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">✏️ 표의 출석 칸을 클릭하면 출석·지각·결석을 바로 수정할 수 있습니다. (모임 후 지각 보정용)</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:4px">주차별 출석 현황</div>
+      <div style="font-size:14px;color:var(--sub);margin-bottom:10px">✏️ 표의 출석 칸을 클릭하면 출석·지각·결석을 바로 수정할 수 있습니다. (모임 후 지각 보정용)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
         <div style="position:relative;flex:1 1 260px;min-width:200px">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="attSearch" type="text" placeholder="이름 검색…" oninput="renderAttendance()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
+          <input id="attSearch" type="text" placeholder="이름 검색…" oninput="renderAttendance()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:15px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
         </div>
         <select id="attGradeFilter" onchange="renderAttendance()" class="sel" style="flex:0 0 118px">
           <option value="">전체 학년</option>
@@ -511,7 +566,7 @@
           <option value="미처리">미처리</option>
         </select>
       </div>
-      <div id="attCount" style="font-size:12px;color:var(--sub);margin-bottom:8px"></div>
+      <div id="attCount" style="font-size:14px;color:var(--sub);margin-bottom:8px"></div>
       <div class="tbl-scroll-wrap">
         <div class="tbl-scroll" id="attScroll">
           <table class="tbl" id="attTable"><thead id="attThead"></thead><tbody id="attTbody"></tbody></table>
@@ -526,7 +581,7 @@
       <div class="two-col">
         <div class="reg-box">
           <div class="rb-t">📁 엑셀 일괄 등록</div>
-          <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;width:100%;margin-bottom:10px;font-size:13px" onclick="downloadTemplate()">엑셀 양식 다운로드</button>
+          <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;width:100%;margin-bottom:10px;font-size:15px" onclick="downloadTemplate()">엑셀 양식 다운로드</button>
           <div class="up-zone" onclick="document.getElementById('xlsxInput').click()">
             <div class="ue">📊</div><div class="ut">파일을 클릭하여 선택</div><div class="us">.xlsx / .csv 지원</div>
           </div>
@@ -535,7 +590,7 @@
           <div class="msg err" id="xlsxErr"></div>
           <div class="msg ok"  id="xlsxOk"></div>
           <div id="xlsxPreview" style="display:none;margin-bottom:14px">
-            <div style="font-size:13px;font-weight:700;margin-bottom:8px" id="xlsxPreviewLabel"></div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:8px" id="xlsxPreviewLabel"></div>
             <div class="tbl-wrap" style="max-height:200px;overflow-y:auto"><table class="tbl" id="xlsxPreviewTable"></table></div>
           </div>
           <button class="btn btn-p btn-full" id="xlsxBtn" style="display:none" onclick="uploadExcel()">업로드 실행</button>
@@ -563,12 +618,12 @@
       </div>
       <div style="margin-top:20px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-          <div style="font-size:15px;font-weight:800">등록된 학생 목록</div>
+          <div style="font-size:17px;font-weight:800">등록된 학생 목록</div>
           <div style="position:relative;flex:1;min-width:160px">
             <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--sub)" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
-            <input id="stuSearch" type="text" placeholder="이름·반·부모님·PIN·전화번호 검색…" oninput="renderStudentList()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
+            <input id="stuSearch" type="text" placeholder="이름·반·부모님·PIN·전화번호 검색…" oninput="renderStudentList()" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid var(--bdr);border-radius:10px;font-size:15px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)" onfocus="this.style.borderColor='var(--p)'" onblur="this.style.borderColor='var(--bdr)'">
           </div>
-          <div id="stuCount" style="font-size:12px;color:var(--sub);white-space:nowrap"></div>
+          <div id="stuCount" style="font-size:14px;color:var(--sub);white-space:nowrap"></div>
           <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none" onclick="exportStudentsExcel()">엑셀 다운로드</button>
         </div>
         <div class="tbl-scroll-wrap">
@@ -583,7 +638,7 @@
         <div id="editStuPanel" class="md-ov" onclick="if(event.target===this)closeEditStu()">
           <div class="md">
             <div class="md-hd">
-              <div class="md-t">학생 정보 수정 <span id="esWho" style="font-weight:600;color:var(--sub);font-size:13px"></span></div>
+              <div class="md-t">학생 정보 수정 <span id="esWho" style="font-weight:600;color:var(--sub);font-size:15px"></span></div>
               <button class="md-x" onclick="closeEditStu()" aria-label="닫기">&times;</button>
             </div>
             <div class="md-bd">
@@ -638,6 +693,68 @@
       <button class="btn btn-g btn-full" style="margin-top:16px" onclick="exportAwards()">시상 명단 엑셀 내보내기</button>
     </div>
 
+    <!-- 통독 스케줄 -->
+    <div id="tab-sched" style="display:none">
+      <div class="pg-t">통독 스케줄</div>
+      <div class="pg-s">학부모 화면 "이번 주 읽을 본문"에 표시됩니다. 비워둔 칸은 저장할 때 삭제돼요.</div>
+      <div class="sc-bar">
+        <div class="sc-month">
+          <button onclick="moveSchedMonth(-1)" aria-label="이전 달">‹</button>
+          <span id="schedMonthLbl"></span>
+          <button onclick="moveSchedMonth(1)" aria-label="다음 달">›</button>
+        </div>
+        <input type="hidden" id="schedMonth"/>
+        <div class="sc-actions">
+          <button class="sc-btn" onclick="downloadSchedTemplate()">양식 다운로드</button>
+          <button class="sc-btn" onclick="document.getElementById('schedXlsx').click()">엑셀 올리기</button>
+          <input type="file" id="schedXlsx" accept=".xlsx,.csv" style="display:none" onchange="importSchedExcel(this)"/>
+          <span id="schedDirty" class="sc-dirty">저장 안 됨</span>
+          <button class="sc-btn sc-btn-p" onclick="saveSchedMonth()">저장</button>
+        </div>
+      </div>
+      <div class="sc-wrap">
+        <table class="sc-tbl">
+          <colgroup><col style="width:104px"><col><col></colgroup>
+          <thead><tr><th>날짜</th>
+            <th><div class="sc-th">저학년 <span>1~3학년</span><button class="sc-auto" onclick="openSchedAuto('low')">자동 채우기</button></div></th>
+            <th><div class="sc-th">고학년 <span>4~6학년</span><button class="sc-auto" onclick="openSchedAuto('high')">자동 채우기</button></div></th></tr></thead>
+          <tbody id="schedBody" oninput="setSchedDirty(true)"></tbody>
+        </table>
+      </div>
+      <div class="sc-help"><b>자동 채우기</b>로 시작 본문만 고르면 월말까지 채워지고, 칸은 직접 고칠 수 있어요. 엑셀은 <b>양식 다운로드</b>, 본문 입력, <b>엑셀 올리기</b> 순서로. 마지막에 <b>저장</b>을 눌러주세요.</div>
+
+      <!-- 자동 채우기 모달 -->
+      <div id="schedAutoPanel" class="md-ov" onclick="if(event.target===this)closeSchedAuto()">
+        <div class="md" style="max-width:760px">
+          <div class="md-hd">
+            <div class="md-t">자동 채우기 <span id="saWho" style="font-weight:600;color:var(--sub);font-size:13px"></span></div>
+            <button class="md-x" onclick="closeSchedAuto()" aria-label="닫기">&times;</button>
+          </div>
+          <div class="md-bd">
+            <div class="fl">
+              <input class="fld" id="saSearch" placeholder="성경 검색 (예: 출애굽, 요한)" oninput="renderSaBooks()"/>
+              <div id="saBooks"></div>
+              <div>
+                <div class="fl-lbl">시작 장 <span id="saBookName" style="font-weight:800;color:var(--p)"></span></div>
+                <div id="saChapters" class="sa-grid" style="margin-top:6px"></div>
+              </div>
+              <div class="fld-row">
+                <div><div class="fl-lbl">시작 날짜</div><input class="fld" id="saStart" type="date" oninput="renderSaPreview()"/></div>
+                <div><div class="fl-lbl">하루 장수</div><input class="fld" id="saPerDay" type="number" min="1" oninput="renderSaPreview()"/></div>
+                <div><div class="fl-lbl">일요일 장수</div><input class="fld" id="saPerSun" type="number" min="1" oninput="renderSaPreview()"/></div>
+              </div>
+              <label style="font-size:13px;display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="saTue" checked onchange="renderSaPreview()"/> 화요일은 '화요모임'</label>
+              <div id="saPreview" class="col-hint" style="margin:0"></div>
+            </div>
+          </div>
+          <div class="md-ft">
+            <button class="btn btn-sm" style="background:#F3F4F6;color:#6B7280;border:none;padding:11px 20px" onclick="closeSchedAuto()">취소</button>
+            <button class="btn btn-p" style="padding:11px 24px" onclick="applySchedAuto()">채우기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 학기 설정 -->
     <div id="tab-settings" style="display:none">
       <div class="pg-t">학기 설정</div>
@@ -646,7 +763,7 @@
       <div style="flex:2;min-width:280px;display:flex;flex-direction:column;gap:16px">
       <div class="set-box" id="curSemBox" style="margin-bottom:0">
         <div class="sb-t">📅 현재 학기</div>
-        <div id="curSemInfo" style="font-size:14px;color:var(--sub);margin-bottom:16px">불러오는 중...</div>
+        <div id="curSemInfo" style="font-size:16px;color:var(--sub);margin-bottom:16px">불러오는 중...</div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none" onclick="showEditSem()">✏️ 수정</button>
           <button class="btn btn-danger btn-sm" onclick="endSemester()">학기 종료</button>
@@ -694,7 +811,7 @@
       <!-- 오른쪽: 반 정보 -->
       <div class="set-box" style="flex:3;min-width:220px;margin-bottom:0">
         <div class="sb-t">🏫 반 정보 (학년 · 선생님)</div>
-        <div style="font-size:12px;color:var(--sub);margin-bottom:14px">반별 현황에 표시됩니다.</div>
+        <div style="font-size:14px;color:var(--sub);margin-bottom:14px">반별 현황에 표시됩니다.</div>
         <div id="clsSettingList"></div>
       </div>
       </div><!-- /flex row -->
@@ -708,6 +825,7 @@
   <div class="mob-ni"    id="mob-att"      onclick="showTab('att')">     <span class="mi"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="7" r="3"/><path d="M2 18c0-3.3 2.7-5 8-5s8 1.7 8 5"/><polyline points="12,4 14,6 18,2"/></svg></span><span>출석</span></div>
   <div class="mob-ni"    id="mob-students" onclick="showTab('students')"><span class="mi"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="7" r="4"/><path d="M2 19c0-4 3.6-7 8-7s8 3 8 7"/></svg></span><span>학생</span></div>
   <div class="mob-ni"    id="mob-award"    onclick="showTab('award')">   <span class="mi"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="10,2 12.5,7.5 18.5,8.2 14,12.5 15.5,18.5 10,15.5 4.5,18.5 6,12.5 1.5,8.2 7.5,7.5"/></svg></span><span>시상</span></div>
+  <div class="mob-ni"    id="mob-sched"    onclick="showTab('sched')">   <span class="mi"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5c-2-1.5-5-2-8-1.5v12c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-12c-3-.5-6 0-8 1.5z"/><line x1="10" y1="5" x2="10" y2="17"/></svg></span><span>통독</span></div>
   <div class="mob-ni"    id="mob-settings" onclick="showTab('settings')"><span class="mi"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="16" height="15" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="5"/><line x1="14" y1="2" x2="14" y2="5"/></svg></span><span>설정</span></div>
 </div>
 <div class="ld-ov" id="ldOv"><div class="spinner"></div></div>
@@ -802,7 +920,7 @@
   }
 
   // ── 탭 ──
-  const TABS = ['dash','check','att','students','award','settings'];
+  const TABS = ['dash','check','att','students','award','sched','settings'];
   function showTab(tab) {
     TABS.forEach(t => {
       document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
@@ -811,6 +929,255 @@
       if (mobEl) mobEl.classList.toggle('on', t === tab);
     });
     if (tab === 'att') loadAttendance();
+    if (tab === 'sched' && !schedDirty) loadSchedMonth(); // 저장 안 된 입력은 탭을 오가도 유지
+  }
+
+  // ── 통독 스케줄 ──
+  const schedMonthEl = () => document.getElementById('schedMonth');
+  let schedDirty = false;
+  function setSchedDirty(v) { schedDirty = v; document.getElementById('schedDirty').classList.toggle('on', v); }
+  const schedLeaveOk = () => !schedDirty || confirm('저장하지 않은 변경이 있어요. 버리고 이동할까요?');
+  window.addEventListener('beforeunload', e => { if (schedDirty) e.preventDefault(); });
+
+  function moveSchedMonth(d) {
+    if (!schedLeaveOk()) return;
+    const [y, m] = schedMonthEl().value.split('-').map(Number);
+    const t = new Date(y, m - 1 + d, 1);
+    schedMonthEl().value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;
+    loadSchedMonth();
+  }
+
+  async function loadSchedMonth() {
+    const el = schedMonthEl();
+    if (!el.value) { const n = new Date(); el.value = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
+    const [y, m] = el.value.split('-').map(Number);
+    const last = new Date(y, m, 0).getDate();
+    const ym = el.value;
+    const { data, error } = await sb.from('joyland_schedule').select('read_date,grade_group,passage')
+      .gte('read_date', `${ym}-01`).lte('read_date', `${ym}-${last}`);
+    if (error) { showToast('스케줄 불러오기 실패'); return; }
+    document.getElementById('schedMonthLbl').textContent = `${y}년 ${m}월`;
+    const now = new Date(), isThisMonth = now.getFullYear() === y && now.getMonth() + 1 === m;
+    const body = document.getElementById('schedBody');
+    body.innerHTML = Array.from({ length: last }, (_, i) => {
+      const d = i + 1, dow = new Date(y, m - 1, d).getDay();
+      const cls = [dow === 0 && 'sun', dow === 6 && 'sat', dow === 2 && 'meet', isThisMonth && d === now.getDate() && 'today'].filter(Boolean).join(' ');
+      return `<tr class="${cls}"><td class="sc-date">${m}.${d}<em>${'일월화수목금토'[dow]}</em></td>
+        <td><input data-d="${d}" data-g="low" aria-label="${m}월 ${d}일 저학년"/></td>
+        <td><input data-d="${d}" data-g="high" aria-label="${m}월 ${d}일 고학년"/></td></tr>`;
+    }).join('');
+    setSchedDirty(false);
+    (data || []).forEach(r => {
+      const inp = body.querySelector(`input[data-d="${+r.read_date.slice(8)}"][data-g="${r.grade_group}"]`);
+      if (inp) inp.value = r.passage;
+    });
+  }
+
+  async function saveSchedMonth() {
+    const ym = schedMonthEl().value;
+    const day = d => `${ym}-${String(d).padStart(2,'0')}`;
+    const ups = [], dels = { low: [], high: [] };
+    document.querySelectorAll('#schedBody input').forEach(inp => {
+      const v = inp.value.trim(), date = day(inp.dataset.d), g = inp.dataset.g;
+      if (v) ups.push({ read_date: date, grade_group: g, passage: v });
+      else dels[g].push(date);
+    });
+    loading(true);
+    try {
+      const results = await Promise.all([
+        ups.length ? sb.from('joyland_schedule').upsert(ups, { onConflict: 'read_date,grade_group' }) : {},
+        ...['low','high'].filter(g => dels[g].length).map(g =>
+          sb.from('joyland_schedule').delete().eq('grade_group', g).in('read_date', dels[g]))
+      ]);
+      const err = results.find(r => r.error)?.error;
+      if (err) { showToast('저장 실패: ' + err.message); return; }
+      setSchedDirty(false);
+      showToast(`${ym.replace('-', '년 ')}월 스케줄 저장 완료`);
+    } finally { loading(false); }
+  }
+
+  // 성경 66권 [이름, 장수] — 앞 39권 구약, 뒤 27권 신약
+  const BIBLE = [
+    ['창세기',50],['출애굽기',40],['레위기',27],['민수기',36],['신명기',34],['여호수아',24],['사사기',21],['룻기',4],
+    ['사무엘상',31],['사무엘하',24],['열왕기상',22],['열왕기하',25],['역대상',29],['역대하',36],['에스라',10],['느헤미야',13],
+    ['에스더',10],['욥기',42],['시편',150],['잠언',31],['전도서',12],['아가',8],['이사야',66],['예레미야',52],
+    ['예레미야애가',5],['에스겔',48],['다니엘',12],['호세아',14],['요엘',3],['아모스',9],['오바댜',1],['요나',4],
+    ['미가',7],['나훔',3],['하박국',3],['스바냐',3],['학개',2],['스가랴',14],['말라기',4],
+    ['마태복음',28],['마가복음',16],['누가복음',24],['요한복음',21],['사도행전',28],['로마서',16],['고린도전서',16],['고린도후서',13],
+    ['갈라디아서',6],['에베소서',6],['빌립보서',4],['골로새서',4],['데살로니가전서',5],['데살로니가후서',3],['디모데전서',6],['디모데후서',4],
+    ['디도서',3],['빌레몬서',1],['히브리서',13],['야고보서',5],['베드로전서',5],['베드로후서',3],['요한일서',5],['요한이서',1],
+    ['요한삼서',1],['유다서',1],['요한계시록',22]
+  ];
+
+  /**
+   * 날짜별 본문 계산. 하루 분량이 책 끝을 넘으면 그 책에서 끊고 다음 날 새 책으로
+   * (예: 출애굽기 40장 → 다음 날 민수기 1-3장). 요한계시록이 끝나면 빈칸.
+   * days: [{ d, dow }], start: { b: 책 index, c: 장 }
+   */
+  function planReading(days, start, perDay, perSun, tueMeet) {
+    let { b, c } = start;
+    return days.map(({ d, dow }) => {
+      if (tueMeet && dow === 2) return { d, passage: '화요모임' };
+      if (b >= BIBLE.length) return { d, passage: '' };
+      const [name, max] = BIBLE[b];
+      const end = Math.min(c + (dow === 0 ? perSun : perDay) - 1, max);
+      const passage = `${name} ${c === end ? c : c + '-' + end}장`;
+      if (end >= max) { b++; c = 1; } else c = end + 1;
+      return { d, passage };
+    });
+  }
+
+  /** '창세기 39-41장' → 그다음 장 { b, c }. 형식이 다르면 null */
+  function nextAfter(passage) {
+    const m = String(passage).trim().match(/^(.+?)\s*(\d+)(?:\s*-\s*(\d+))?\s*장$/);
+    const b = m ? BIBLE.findIndex(x => x[0] === m[1].trim()) : -1;
+    if (b < 0) return null;
+    const last = +(m[3] || m[2]);
+    return last >= BIBLE[b][1] ? { b: b + 1, c: 1 } : { b, c: last + 1 };
+  }
+
+  const SA_DEFAULT = { low: { perDay: 1, perSun: 1 }, high: { perDay: 3, perSun: 1 } };
+  let sa = { g: 'low', b: 0, c: 1 };
+
+  async function openSchedAuto(g) {
+    const ym = schedMonthEl().value;
+    const inputs = [...document.querySelectorAll(`#schedBody input[data-g="${g}"]`)];
+    const firstEmpty = inputs.find(i => !i.value.trim()) || inputs[0];
+    const startD = +firstEmpty.dataset.d;
+    // 시작점: 이 달에서 시작일 이전 마지막 본문 → 없으면 지난달 마지막 본문의 다음 장
+    let prev = inputs.slice(0, startD - 1).reverse().map(i => nextAfter(i.value)).find(Boolean);
+    if (!prev) {
+      const { data } = await sb.from('joyland_schedule').select('passage').eq('grade_group', g)
+        .lt('read_date', `${ym}-01`).neq('passage', '화요모임').order('read_date', { ascending: false }).limit(1);
+      prev = data?.[0] && nextAfter(data[0].passage);
+    }
+    sa = { g, ...(prev && prev.b < BIBLE.length ? prev : { b: 0, c: 1 }) };
+    document.getElementById('saWho').textContent = g === 'high' ? '고학년 (4~6)' : '저학년 (1~3)';
+    document.getElementById('saSearch').value = '';
+    const st = document.getElementById('saStart');
+    st.min = `${ym}-01`; st.max = `${ym}-${String(inputs.length).padStart(2,'0')}`;
+    st.value = `${ym}-${String(startD).padStart(2,'0')}`;
+    document.getElementById('saPerDay').value = SA_DEFAULT[g].perDay;
+    document.getElementById('saPerSun').value = SA_DEFAULT[g].perSun;
+    renderSaBooks(); renderSaChapters();
+    document.getElementById('schedAutoPanel').classList.add('show');
+  }
+  function closeSchedAuto() { document.getElementById('schedAutoPanel').classList.remove('show'); }
+
+  function renderSaBooks() {
+    const q = document.getElementById('saSearch').value.trim();
+    const btn = i => BIBLE[i][0].includes(q)
+      ? `<button class="${i === sa.b ? 'on' : ''}" onclick="sa.b=${i};sa.c=1;renderSaBooks();renderSaChapters()">${BIBLE[i][0]}</button>` : '';
+    const sec = (title, from, to) => {
+      const html = Array.from({ length: to - from }, (_, k) => btn(from + k)).join('');
+      return html ? `<div class="sa-sec">${title}</div><div class="sa-grid sa-books">${html}</div>` : '';
+    };
+    document.getElementById('saBooks').innerHTML =
+      (sec('구약', 0, 39) + sec('신약', 39, 66)) || '<div style="font-size:15px;color:var(--sub)">검색 결과가 없어요</div>';
+    document.querySelector('#saBooks .on')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function renderSaChapters() {
+    const [name, max] = BIBLE[sa.b];
+    document.getElementById('saBookName').textContent = `${name} ${sa.c}장`;
+    document.getElementById('saChapters').innerHTML = Array.from({ length: max }, (_, k) =>
+      `<button class="${k + 1 === sa.c ? 'on' : ''}" onclick="sa.c=${k + 1};renderSaChapters()">${k + 1}</button>`).join('');
+    document.querySelector('#saChapters .on')?.scrollIntoView({ block: 'nearest' });
+    renderSaPreview();
+  }
+
+  /** 시작 날짜 ~ 월말 계획 */
+  function saPlan() {
+    const [y, m, d0] = document.getElementById('saStart').value.split('-').map(Number);
+    if (!d0) return [];
+    const last = new Date(y, m, 0).getDate();
+    const days = Array.from({ length: last - d0 + 1 }, (_, k) => ({ d: d0 + k, dow: new Date(y, m - 1, d0 + k).getDay() }));
+    const n = id => Math.max(1, +document.getElementById(id).value || 1);
+    return planReading(days, sa, n('saPerDay'), n('saPerSun'), document.getElementById('saTue').checked);
+  }
+
+  function renderSaPreview() {
+    const plan = saPlan().filter(p => p.passage && p.passage !== '화요모임');
+    const m = +schedMonthEl().value.slice(5);
+    document.getElementById('saPreview').innerHTML = plan.length
+      ? `<b>${m}월 ${plan[0].d}일</b> ${plan[0].passage} → <b>${m}월 ${plan.at(-1).d}일</b> ${plan.at(-1).passage}`
+      : '채울 날짜가 없어요';
+  }
+
+  function applySchedAuto() {
+    const plan = saPlan();
+    plan.forEach(p => {
+      const inp = document.querySelector(`#schedBody input[data-d="${p.d}"][data-g="${sa.g}"]`);
+      if (inp) inp.value = p.passage;
+    });
+    SA_DEFAULT[sa.g] = { perDay: +document.getElementById('saPerDay').value || 1, perSun: +document.getElementById('saPerSun').value || 1 };
+    closeSchedAuto(); setSchedDirty(true);
+    showToast(`${plan.length}일 채웠어요. 확인 후 저장을 눌러주세요`);
+  }
+
+  /** 지금 화면의 달을 기존 엑셀과 같은 양식으로 (입력된 본문 포함) */
+  function downloadSchedTemplate() {
+    const [y, m] = schedMonthEl().value.split('-').map(Number);
+    const last = new Date(y, m, 0).getDate();
+    const val = (d, g) => document.querySelector(`#schedBody input[data-d="${d}"][data-g="${g}"]`)?.value.trim() || '';
+    const aoa = [['저학년', '', '', '', '고학년', '', ''], ['날짜', '요일', '본문', '', '날짜', '요일', '본문']];
+    for (let d = 1; d <= last; d++) {
+      const dow = '일월화수목금토'[new Date(y, m - 1, d).getDay()], date = `${m}월 ${d}일`;
+      aoa.push([date, dow, val(d, 'low'), '', date, dow, val(d, 'high')]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } }];
+    ws['!cols'] = [{ wch: 10 }, { wch: 5 }, { wch: 20 }, { wch: 3 }, { wch: 10 }, { wch: 5 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `${m}월`);
+    XLSX.writeFile(wb, `조이랜드_통독스케줄_${y}년_${m}월.xlsx`);
+  }
+
+  /** 기존 엑셀 양식: 1행 '저학년'/'고학년' 블록, 2행 '날짜·요일·본문', 3행~ 데이터 */
+  function importSchedExcel(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+      input.value = '';
+      try {
+        const ws = (wb => wb.Sheets[wb.SheetNames[0]])(XLSX.read(e.target.result, { type: 'array' }));
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        const hi = rows.findIndex(r => r.some(c => String(c).trim() === '날짜'));
+        if (hi < 1) { showToast('양식을 찾을 수 없어요 ("날짜" 헤더 필요)'); return; }
+        // '날짜' 열마다 위쪽 행에서 저학년/고학년 라벨 찾기
+        const blocks = [];
+        rows[hi].forEach((c, ci) => {
+          if (String(c).trim() !== '날짜') return;
+          const label = rows.slice(0, hi).map(r => r.slice(0, ci + 1).reverse().find(v => /저학년|고학년/.test(v)) || '').join('');
+          const g = /고학년/.test(label) ? 'high' : /저학년/.test(label) ? 'low' : null;
+          if (g) blocks.push({ g, dc: ci, pc: rows[hi].findIndex((v, j) => j > ci && String(v).trim() === '본문') });
+        });
+        if (!blocks.length) { showToast('저학년/고학년 구분을 찾을 수 없어요'); return; }
+        const parsed = [];
+        rows.slice(hi + 1).forEach(r => blocks.forEach(b => {
+          const raw = r[b.dc], passage = String(r[b.pc] ?? '').trim();
+          if (!raw || !passage) return;
+          let mo, d;
+          if (typeof raw === 'number') { const p = XLSX.SSF.parse_date_code(raw); mo = p.m; d = p.d; }
+          else { const mt = String(raw).match(/(\d{1,2})\s*[월\/.-]\s*(\d{1,2})/); if (!mt) return; mo = +mt[1]; d = +mt[2]; }
+          parsed.push({ mo, d, g: b.g, passage });
+        }));
+        if (!parsed.length) { showToast('읽을 데이터가 없어요'); return; }
+        if (!schedLeaveOk()) return;
+        // 엑셀의 월로 이동 (연도는 현재 선택된 연도 기준)
+        const year = (schedMonthEl().value || String(new Date().getFullYear())).slice(0, 4);
+        schedMonthEl().value = `${year}-${String(parsed[0].mo).padStart(2,'0')}`;
+        await loadSchedMonth();
+        let n = 0;
+        parsed.filter(p => p.mo === parsed[0].mo).forEach(p => {
+          const inp = document.querySelector(`#schedBody input[data-d="${p.d}"][data-g="${p.g}"]`);
+          if (inp) { inp.value = p.passage; n++; }
+        });
+        setSchedDirty(n > 0);
+        showToast(`${parsed[0].mo}월 ${n}칸 불러왔어요. 확인 후 저장을 눌러주세요`);
+      } catch (err) { console.error(err); showToast('파일 읽기 실패'); }
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   // ── 전체 현황 ──
@@ -915,7 +1282,7 @@
 
       const clsInfo = classes.find(c => c.name === cls);
       const clsMeta = clsInfo
-        ? `<span style="font-size:11px;color:var(--sub);font-weight:400;margin-left:8px">${[clsInfo.grade, clsInfo.teacher_name].filter(Boolean).join(' · ')}</span>`
+        ? `<span style="font-size:13px;color:var(--sub);font-weight:400;margin-left:8px">${[clsInfo.grade, clsInfo.teacher_name].filter(Boolean).join(' · ')}</span>`
         : '';
 
       html += `<tr class="cls-row" onclick="toggleClassDetail('${cls.replace(/'/g,"\\'")}')" title="클릭하면 학생 목록 펼치기">
@@ -927,13 +1294,13 @@
         <td data-lbl="이번 주 완료율">
           <div style="display:flex;align-items:center;gap:10px">
             <div class="cls-bar-wrap" style="flex:1"><div class="cls-bar-fill" style="width:${weekRate}%"></div></div>
-            <span style="font-size:12px;font-weight:800;color:var(--p);min-width:34px;text-align:right">${weekRate}%</span>
+            <span style="font-size:14px;font-weight:800;color:var(--p);min-width:34px;text-align:right">${weekRate}%</span>
           </div>
         </td>
         <td data-lbl="누적 완료율">
           <div style="display:flex;align-items:center;gap:10px">
             <div class="cls-bar-wrap" style="flex:1;background:#EDE8FF"><div class="cls-bar-fill" style="width:${avgPct}%;background:linear-gradient(90deg,var(--pd),var(--p))"></div></div>
-            <span style="font-size:12px;font-weight:800;color:var(--pd);min-width:34px;text-align:right">${avgPct}%</span>
+            <span style="font-size:14px;font-weight:800;color:var(--pd);min-width:34px;text-align:right">${avgPct}%</span>
           </div>
         </td>
       </tr>`;
@@ -947,10 +1314,10 @@
           const pct = overallPct(s);
           const wst = weekStat(s);
           const wBadge = wst==='done'
-            ? `<span class="bdg done" style="font-size:10px;padding:2px 7px">완료</span>`
+            ? `<span class="bdg done" style="font-size:12px;padding:2px 7px">완료</span>`
             : wst==='partial'
-            ? `<span class="bdg partial" style="font-size:10px;padding:2px 7px">부분</span>`
-            : `<span class="bdg missed" style="font-size:10px;padding:2px 7px">미체크</span>`;
+            ? `<span class="bdg partial" style="font-size:12px;padding:2px 7px">부분</span>`
+            : `<span class="bdg missed" style="font-size:12px;padding:2px 7px">미체크</span>`;
           html += `<div class="cls-mini-card">
             <div class="cls-mini-em">${chickenEmoji(pct)}</div>
             <div class="cls-mini-nm">${s.name}</div>
@@ -1092,7 +1459,7 @@
       const isOpen  = openSet.has(w);
       const isClose = closeSet.has(w);
       const isTest  = testSet.has(w);
-      const dateLabel = `<div style="font-size:10px;font-weight:500;color:${isCur ? 'var(--p)' : isBreak ? '#92400E' : isOpen ? 'var(--green)' : isClose ? '#F43F5E' : isTest ? '#2563EB' : 'var(--sub)'};margin-top:2px">${weekDate(w)}</div>`;
+      const dateLabel = `<div style="font-size:12px;font-weight:500;color:${isCur ? 'var(--p)' : isBreak ? '#92400E' : isOpen ? 'var(--green)' : isClose ? '#F43F5E' : isTest ? '#2563EB' : 'var(--sub)'};margin-top:2px">${weekDate(w)}</div>`;
       const label = isBreak ? `${w}주 🌿` : isOpen ? `${w}주 🌱` : isClose ? `${w}주 🎓` : isTest ? `${w}주 🧪` : `${w}주${isCur ? ' ◀' : ''}`;
       th += `<th class="${isCur ? 'cur-week' : ''}" style="min-width:72px${isBreak ? ';background:#FEF9EC' : isOpen ? ';background:#EDFAF4' : isClose ? ';background:#FFF0F3' : isTest ? ';background:#EFF6FF' : ''}">${label}${dateLabel}</th>`;
     }
@@ -1163,7 +1530,7 @@
       }
       if (checkTabMode === 'all') {
         const rate = effectiveWeeks > 0 ? Math.round((doneCount / effectiveWeeks) * 100) : 0;
-        tb += `<td style="font-weight:800">${Math.floor(doneCount)}<span style="font-size:11px;color:var(--sub);font-weight:400"> /${effectiveWeeks}</span></td>`;
+        tb += `<td style="font-weight:800">${Math.floor(doneCount)}<span style="font-size:13px;color:var(--sub);font-weight:400"> /${effectiveWeeks}</span></td>`;
         tb += `<td style="font-weight:800;color:var(--p)">${rate}%</td>`;
       }
       tb += '</tr>';
@@ -1238,12 +1605,12 @@
         <td class="${grClass(s.grade)}" style="font-weight:700">${s.grade}</td>
         <td>${s.gender}</td>
         <td>${s.class_name || '<span style="color:var(--bdr)">—</span>'}</td>
-        <td style="font-size:12px;color:var(--sub)">${s.parent_name || '<span style="color:var(--bdr)">—</span>'}</td>
-        <td style="letter-spacing:2px;font-weight:700;color:var(--p);font-size:12px">${s.pin}</td>
-        <td><span style="font-size:11px;padding:4px 10px;border-radius:99px;font-weight:700;background:${statusBg};color:${statusColor}">${s.active?'재학':'비활성'}</span></td>
+        <td style="font-size:14px;color:var(--sub)">${s.parent_name || '<span style="color:var(--bdr)">—</span>'}</td>
+        <td style="letter-spacing:2px;font-weight:700;color:var(--p);font-size:14px">${s.pin}</td>
+        <td><span style="font-size:13px;padding:4px 10px;border-radius:99px;font-weight:700;background:${statusBg};color:${statusColor}">${s.active?'재학':'비활성'}</span></td>
         <td style="display:flex;gap:6px">
-          <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;padding:7px 12px;font-size:12px" onclick="openEditStu('${s.id}')">수정</button>
-          <button class="btn btn-sm btn-danger" style="padding:7px 12px;font-size:12px" onclick="toggleStudent('${s.id}',${s.active})">${s.active?'비활성':'복원'}</button>
+          <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;padding:7px 12px;font-size:14px" onclick="openEditStu('${s.id}')">수정</button>
+          <button class="btn btn-sm btn-danger" style="padding:7px 12px;font-size:14px" onclick="toggleStudent('${s.id}',${s.active})">${s.active?'비활성':'복원'}</button>
         </td>
       </tr>`;
     });
@@ -1520,7 +1887,7 @@
       if (isFuture) return `<span style="color:var(--sub)">—</span>`;
       const map = { '출석': 'color:#2DC38C;background:#E9FAF4', '지각': 'color:#FF8C42;background:#FFF2E8', '결석': 'color:#EF4444;background:#FEE2E2' };
       const style = map[status] || 'color:#8B87A0;background:#F0EBFF';
-      return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;${style}">${status || '—'}</span>`;
+      return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:13px;font-weight:700;${style}">${status || '—'}</span>`;
     };
 
     // 개강·방학·종강 주차엔 이번 주 인원수를 세지 않음
@@ -1563,7 +1930,7 @@
       const isTst  = testSet.has(w);
       const isCur  = w === currentWeek;
       const style  = isBrk ? 'background:#FEF3C7;color:#92400E' : isOpn ? 'background:#EDFAF4;color:var(--green)' : isCls ? 'background:#FFF0F3;color:#F43F5E' : isTst ? 'background:#EFF6FF;color:#2563EB' : isCur ? 'background:#E4DAFF;color:var(--pd)' : '';
-      thHtml += `<th style="white-space:nowrap;${style ? style+';' : ''}">${w}주<br><span style="font-size:10px;font-weight:400;opacity:.75">${weekDate(w)}</span>${isTst ? '<br><span style="font-size:9px;font-weight:800">테스트</span>' : ''}</th>`;
+      thHtml += `<th style="white-space:nowrap;${style ? style+';' : ''}">${w}주<br><span style="font-size:12px;font-weight:400;opacity:.75">${weekDate(w)}</span>${isTst ? '<br><span style="font-size:11px;font-weight:800">테스트</span>' : ''}</th>`;
     }
     thHtml += `<th style="white-space:nowrap;${thS}" onclick="attSort('rate')">출석률${si('rate')}</th></tr>`;
     document.getElementById('attThead').innerHTML = thHtml;
@@ -1917,7 +2284,7 @@
     const result = document.getElementById('awardResult');
     if (!sem) {
       document.getElementById('awardSub').textContent = '';
-      result.innerHTML = '<div style="color:var(--sub);font-size:14px">진행 중인 학기가 없습니다.</div>';
+      result.innerHTML = '<div style="color:var(--sub);font-size:16px">진행 중인 학기가 없습니다.</div>';
       return;
     }
     const a = calcAwards();
@@ -1927,7 +2294,7 @@
       + `통독 ${wk(a.readAll)}(${a.readAll.length}주) / 출석 ${wk(a.attAll)}(${a.attAll.length}주) 전체 기준`;
 
     if (!a.readDone.length && !a.attDone.length) {
-      result.innerHTML = '<div style="color:var(--sub);font-size:14px;padding:20px 0">아직 평가할 주차가 없습니다. (개강·방학 주차는 시상에서 제외됩니다)</div>';
+      result.innerHTML = '<div style="color:var(--sub);font-size:16px;padding:20px 0">아직 평가할 주차가 없습니다. (개강·방학 주차는 시상에서 제외됩니다)</div>';
       return;
     }
 
@@ -2023,7 +2390,7 @@
 
     // 반 정보 목록
     const el = document.getElementById('clsSettingList');
-    if (!classes.length) { el.innerHTML = '<div style="color:var(--sub);font-size:13px">등록된 반이 없습니다.</div>'; return; }
+    if (!classes.length) { el.innerHTML = '<div style="color:var(--sub);font-size:15px">등록된 반이 없습니다.</div>'; return; }
     // 학년 → 반 이름 순으로 정렬 (학년 없는 반은 뒤로)
     const sorted = [...classes].sort((a, b) =>
       (parseInt(a.grade) || 99) - (parseInt(b.grade) || 99) || a.name.localeCompare(b.name, 'ko', { numeric: true }));
@@ -2036,10 +2403,10 @@
       html += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:10px;border:1px solid var(--bdr)">
         <select class="sel" id="cg-${c.id}" style="flex:0 0 120px">${gradeOpts(c.grade)}</select>
         <input class="fld" placeholder="반 이름" value="${c.name}" id="cn-${c.id}" data-orig="${c.name}"
-          style="flex:1;min-width:120px;padding:8px 12px;font-size:13px;font-weight:700"/>
+          style="flex:1;min-width:120px;padding:8px 12px;font-size:15px;font-weight:700"/>
         <input class="fld" placeholder="선생님 이름" value="${c.teacher_name||''}" id="ct-${c.id}"
-          style="flex:1;min-width:120px;padding:8px 12px;font-size:13px"/>
-        <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;padding:8px 14px;font-size:12px"
+          style="flex:1;min-width:120px;padding:8px 12px;font-size:15px"/>
+        <button class="btn btn-sm" style="background:var(--pl);color:var(--pd);border:none;padding:8px 14px;font-size:14px"
           onclick="saveClassInfo('${c.id}')">저장</button>
       </div>`;
     });
@@ -2122,7 +2489,7 @@
     const pickerEl = document.getElementById(mode === 'edit' ? 'editWeekPicker' : 'newWeekPicker');
     const firstCheck = document.getElementById(mode === 'edit' ? 'editSemFirstCheck' : 'semFirstCheck').value;
     const total = parseInt(document.getElementById(mode === 'edit' ? 'editSemWeeks' : 'semWeeks').value);
-    if (!firstCheck || !total || total < 1) { pickerEl.innerHTML = '<div style="font-size:12px;color:var(--sub)">총 주차 수와 첫 체크일을 먼저 입력하세요.</div>'; return; }
+    if (!firstCheck || !total || total < 1) { pickerEl.innerHTML = '<div style="font-size:14px;color:var(--sub)">총 주차 수와 첫 체크일을 먼저 입력하세요.</div>'; return; }
 
     const byWeek = new Map();
     preBreaks.forEach(w   => byWeek.set(w, 1));
@@ -2139,7 +2506,7 @@
         <span class="wk-tag" style="${t.tag ? `color:${t.color}` : 'visibility:hidden'}">${t.tag || '방학'}</span>
       </div>`;
     }
-    html += '</div><div style="margin-top:10px;font-size:11px;color:var(--sub);line-height:1.7">' +
+    html += '</div><div style="margin-top:10px;font-size:13px;color:var(--sub);line-height:1.7">' +
       '클릭할 때마다: <b style="color:var(--amber)">방학</b> → <b style="color:var(--green)">개강</b> → <b style="color:#F43F5E">종강</b> → <b style="color:#2563EB">테스트</b> → 해제<br>' +
       '방학·개강·종강은 체크 자체가 막히고, <b style="color:#2563EB">테스트</b>는 체크는 되지만 시상에 반영되지 않습니다.</div>';
     pickerEl.innerHTML = html;
